@@ -569,7 +569,7 @@ void TurnLeft() {
   while (1) {
     Motor(-LTurnSpdL, LTurnSpdR);
     ReadCalibrateF();
-    if (F[1] >= Ref) { 
+    if (F[2] >= Ref) { 
       //MotorStop(); 
       break; }
   }
@@ -581,7 +581,7 @@ void TurnRight() {
   while (1) {
     Motor(RTurnSpdL, -RTurnSpdR);
     ReadCalibrateF();
-    if (F[6] >= Ref) { //MotorStop(); 
+    if (F[5] >= Ref) { //MotorStop(); 
       break; }
   }
 }
@@ -963,10 +963,13 @@ PIDF(tctL,tctR,slow_kpf,slow_kdf);
       if (F[0] > Ref) break;
     }
     BZon();
+    int offCount_q = 0;
     while (1) {
       Motor(tctL/2, tctR/2);
       ReadCalibrateF();
-      if (F[0] < Ref ) {
+      if (F[0] < Ref) offCount_q++;
+      else offCount_q = 0;
+      if (offCount_q >= SpinDebounceCount) {
         delay(20);
         BZoff();
         break;
@@ -981,10 +984,13 @@ PIDF(tctL,tctR,slow_kpf,slow_kdf);
       if (F[7] > Ref) break;
     }
     BZon();
+    int offCount_e = 0;
     while (1) {
       Motor(tctL/2, tctR/2);
       ReadCalibrateF();
-      if ( F[7] < Ref) {
+      if (F[7] < Ref) offCount_e++;
+      else offCount_e = 0;
+      if (offCount_e >= SpinDebounceCount) {
         delay(20);
         BZoff();
         break;
@@ -1090,10 +1096,13 @@ Motor(spd, spd);
       if (B[0] > Ref) break;
     }
     BZon();
+    int offCount_eB = 0;
     while (1) {
       Motor(-bctL/2, -bctR/2);
       ReadCalibrateB();
-      if (B[0] < Ref) {
+      if (B[0] < Ref) offCount_eB++;
+      else offCount_eB = 0;
+      if (offCount_eB >= SpinDebounceCount) {
         //delay(50);
         BZoff();
         break;
@@ -1108,10 +1117,13 @@ Motor(spd, spd);
       if (B[7] > Ref) break;
     }
     BZon();
+    int offCount_qB = 0;
     while (1) {
       Motor(-bctL/2, -bctR/2);
       ReadCalibrateB();
-      if ( B[7] < Ref) {
+      if (B[7] < Ref) offCount_qB++;
+      else offCount_qB = 0;
+      if (offCount_qB >= SpinDebounceCount) {
         //delay(50);
         BZoff();
         break;
