@@ -25,7 +25,7 @@ bool batteryUsed = false;
 void set_Freq(String type) {
   if (type == "Coreless_Motors" || type == "coreless") {
     DC_Motors = false;
-    analogWriteFreq(25000);
+    analogWriteFreq(20000);
     Serial.println("Motor: Coreless_Motors (25kHz)");
   } else {
     DC_Motors = true;
