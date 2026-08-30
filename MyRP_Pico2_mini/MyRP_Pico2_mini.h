@@ -40,7 +40,7 @@ void RobotSetup() {
   bat.begin();
   analogReadResolution(12);
   analogWriteResolution(12);
-  analogWriteFreq(DC_Motors ? 1000 : 25000);
+  analogWriteFreq(DC_Motors ? 1000 : 20000);
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(3, INPUT_PULLUP);
