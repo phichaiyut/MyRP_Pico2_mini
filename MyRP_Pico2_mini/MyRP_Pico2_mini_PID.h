@@ -736,7 +736,7 @@ void TurnLeft_B() {
   Motor(-LTurnBackSpdL, LTurnBackSpdR);
   delay(TurnDelayL);
   while (1) {
-    Motor(-LBackTurnSpdL, LTurnBackSpdR);
+    Motor(-LTurnBackSpdL, LTurnBackSpdR);
     ReadCalibrateB();
     if (B[6] >= Ref) {
       //MotorStop();
