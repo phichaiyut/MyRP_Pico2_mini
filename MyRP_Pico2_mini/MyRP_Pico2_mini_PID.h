@@ -392,12 +392,12 @@ void bbtimer(int baseSpeed, int totalTime) {
 
 void lf(int totalTime) {
   unsigned long endTime = millis() + totalTime;
-  while (millis() <= endTime) PIDF(0, 0, 0.005, 0.30);
+  while (millis() <= endTime) PIDF(0, 0, 0.010, 0.30);
 }
 
 void lb(int totalTime) {
   unsigned long endTime = millis() + totalTime;
-  while (millis() <= endTime) PIDB(0, 0, 0.005, 0.30);
+  while (millis() <= endTime) PIDB(0, 0, 0.010, 0.30);
 }
 
 void ffcm(int Speed, float distance) {
