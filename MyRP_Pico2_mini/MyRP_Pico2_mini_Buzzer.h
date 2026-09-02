@@ -29,6 +29,11 @@ void beep(int freq, int dur) {
   delay(dur + 50);
 }
 
+// เสียง "ปี๊บ" สั้น แหลม คล้ายเครื่องยิงบาร์โค้ดใน supermarket
+void BeepScanner() {
+  beep(ToNe, 80);
+}
+
 void blink(int times) {
   for (int i = 0; i < times; i++) {
     digitalWrite(LED_BUILTIN, HIGH); delay(150);

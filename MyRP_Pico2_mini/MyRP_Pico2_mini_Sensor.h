@@ -48,17 +48,20 @@ int BACK_MIN = 0;
 int BACK_MAX = 1000;
 
 // ==================== Sensor Reading ====================
+// หมายเหตุ: มี MCP3008 สองตัวอยู่บนบัส SPI (software SPI) เดียวกัน แยกกันด้วยขา CS
+// (13 = ชุด B, 17 = ชุด A) เนื่องจาก my_MCP3008s เก็บสถานะ CS ไว้ในอ็อบเจกต์เดียว (adc)
+// จึงต้องสลับ CS ก่อนอ่านทุกครั้ง — ใช้ adc.setCS() แทน adc.begin() เพราะ begin() ทำ
+// pinMode()/digitalWrite() ซ้ำทุกครั้งโดยไม่จำเป็น (ขา clk/mosi/miso/CS ทั้งสองถูกตั้งค่า
+// ไว้แล้วครั้งเดียวใน RobotSetup()) setCS() แค่สลับตัวแปรภายใน ไม่มี I/O overhead
 uint16_t read_sensorA(int sensor) {
   if (sensor < 0 || sensor > 7) return 0;
-  adc.begin(14, 15, 16, 13);
-  adc.begin(14, 15, 16, 17);  //adc.begin(5, 4, 12, 20);    // 5=clk, 4=IN, 12=out
+  adc.setCS(17);
   return adc.readADC(sensor);
 }
 
 uint16_t read_sensorB(int sensor) {
   if (sensor < 0 || sensor > 7) return 0;
-  adc.begin(14, 15, 16, 17);
-  adc.begin(14, 15, 16, 13);  //adc.begin(5, 4, 12, 20);    // 5=clk, 4=IN, 12=out
+  adc.setCS(13);
   return adc.readADC(sensor);
 }
 
@@ -493,8 +496,6 @@ void ReadCalibrateF() {
       x = map(F[i], minValueF[F_PIN[i]], maxValueF[F_PIN[i]], 0, 1000);
     if (x < FRONT_MIN) x = 0;
     if (x > FRONT_MAX) x = 1000;
-    // if (x < 0)    x = 0;
-    // if (x > 1000) x = 1000;
     F[i] = x;
   }
 }
@@ -511,8 +512,6 @@ void ReadCalibrateC() {
       x = map(C[i], minValueC[i], maxValueC[i], 0, 1000);
     if (x < CENTER_MIN) x = 0;
     if (x > CENTER_MAX) x = 1000;
-    // if (x < 0)    x = 0;
-    // if (x > 1000) x = 1000;
     C[i] = x;
   }
 }
@@ -529,8 +528,6 @@ void ReadCalibrateB() {
       x = map(B[i], minValueB[B_PIN[i]], maxValueB[B_PIN[i]], 0, 1000);
     if (x < BACK_MIN) x = 0;
     if (x > BACK_MAX) x = 1000;
-    // if (x < 0)    x = 0;
-    // if (x > 1000) x = 1000;
     B[i] = x;
   }
 }
@@ -555,7 +552,7 @@ void RefCenterLineValue(int x) {
   RefC = x;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////
+// ==================== Serial Debug (ทุกตัวเป็น while(1) ห้ามเรียกใน Mission) ====================
 
 void Serial_FrontSensor() {
   while (1) {

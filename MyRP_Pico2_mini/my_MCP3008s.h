@@ -14,6 +14,7 @@ class my_MCP3008s {
 public:
   bool begin(uint8_t cs = SS, SPIClass* theSPI = &SPI);
   bool begin(uint8_t sck, uint8_t mosi, uint8_t miso, uint8_t cs);
+  void setCS(uint8_t cs);
   int readADC(uint8_t channel);
   int readADCDifference(uint8_t differential);
 

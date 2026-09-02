@@ -36,6 +36,12 @@ bool my_MCP3008s::begin(uint8_t sck, uint8_t mosi, uint8_t miso,
   return true;
 }
 
+// สลับชิป CS โดยไม่ตั้งค่า pinMode/digitalWrite ซ้ำ ใช้เมื่อ pin ถูก begin() ไว้แล้ว
+// (ต้องตั้ง pinMode(cs, OUTPUT) และ digitalWrite(cs, HIGH) ให้ทุกขา CS ที่จะสลับใช้ไว้ล่วงหน้า)
+void my_MCP3008s::setCS(uint8_t cs) {
+  this->cs = cs;
+}
+
 int my_MCP3008s::readADC(uint8_t channel) {
   if ((channel < 0) || (channel > 7))
     return -1;

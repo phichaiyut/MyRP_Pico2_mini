@@ -9,6 +9,7 @@
 #define PWMB 6
 #define BIN1 8
 #define BIN2 7
+
 const float VMAX = 12.6f;
 const float VMIN = 7.4f;
 const float VNOM = 11.55f;
@@ -20,7 +21,6 @@ inline void updateBattery() { bat.update(); }
 inline float getBatteryVoltage() { return bat.getVoltage(); }
 
 float scale = 1.0f;
-bool batteryUsed = false;
 
 void set_Freq(String type) {
   if (type == "Coreless_Motors" || type == "coreless") {
@@ -39,10 +39,8 @@ void bat_control() {
 
   if (voltage > 0.5f && voltage >= VMIN && voltage <= VMAX) {
     scale = pow(VNOM / voltage, 0.95f);
-    batteryUsed = true;
   } else {
     scale = 1.0f;
-    batteryUsed = false;
   }
 
   // ป้องกัน scale เกินสำหรับ TB6612FNG (พิกัดกระแสต่ำกว่า VNH7070ASTR มาก จึงจำกัดช่วงให้แคบลง)
@@ -101,7 +99,6 @@ void Move(int l, int r, int t) {
 
 void MotorStop() {
   Motor(0, 0);
-  // delay(t);
 }
 
 void MotorStop(int t) {
@@ -137,13 +134,12 @@ void MotorShot(int t = 3, int power = 90) {
 int BaseSpeed, LeftBaseSpeed, RightBaseSpeed, BackLeftBaseSpeed, BackRightBaseSpeed;
 float PID_KP_Front, PID_KD_Front;
 float PID_KP_Back, PID_KD_Back;
-// int LastError_F, LastError_B;
 int L[10], R[10];
 int BL[10], BR[10];
 float KP[10], KD[10];
 float KP_Back[10], KD_Back[10];
 
-// ��˹� index ���ӧ���
+// ดัชนีตารางความเร็ว (ใช้กับ setBalanceSpeed/Set_KP_KD ฯลฯ)
 #define SPD_10 0
 #define SPD_20 1
 #define SPD_30 2
@@ -176,16 +172,14 @@ void Set_KP_KD_Back(int ch, float kp, float kd) {
 }
 
 void InitialSpeed() {
-  //  LastError_F   = 3500, LastError_B = 3500;
   if (BaseSpeed <= 10) {
     LeftBaseSpeed = BaseSpeed - L[SPD_10];
     RightBaseSpeed = BaseSpeed - R[SPD_10];
     BackLeftBaseSpeed = BaseSpeed - BL[SPD_10];
     BackRightBaseSpeed = BaseSpeed - BR[SPD_10];
-    PID_KP_Front = KP[SPD_10];  //forward PID
+    PID_KP_Front = KP[SPD_10];       // forward PID
     PID_KD_Front = KD[SPD_10];
-
-    PID_KP_Back = KP_Back[SPD_10];  //backward PID
+    PID_KP_Back = KP_Back[SPD_10];   // backward PID
     PID_KD_Back = KD_Back[SPD_10];
 
   } else if (BaseSpeed <= 20) {
@@ -193,10 +187,9 @@ void InitialSpeed() {
     RightBaseSpeed = BaseSpeed - R[SPD_20];
     BackLeftBaseSpeed = BaseSpeed - BL[SPD_20];
     BackRightBaseSpeed = BaseSpeed - BR[SPD_20];
-    PID_KP_Front = KP[SPD_20];  //forward PID
+    PID_KP_Front = KP[SPD_20];       // forward PID
     PID_KD_Front = KD[SPD_20];
-
-    PID_KP_Back = KP_Back[SPD_20];  //backward PID
+    PID_KP_Back = KP_Back[SPD_20];   // backward PID
     PID_KD_Back = KD_Back[SPD_20];
 
   } else if (BaseSpeed <= 30) {
@@ -204,10 +197,9 @@ void InitialSpeed() {
     RightBaseSpeed = BaseSpeed - R[SPD_30];
     BackLeftBaseSpeed = BaseSpeed - BL[SPD_30];
     BackRightBaseSpeed = BaseSpeed - BR[SPD_30];
-    PID_KP_Front = KP[SPD_30];  //forward PID
+    PID_KP_Front = KP[SPD_30];       // forward PID
     PID_KD_Front = KD[SPD_30];
-
-    PID_KP_Back = KP_Back[SPD_30];  //backward PID
+    PID_KP_Back = KP_Back[SPD_30];   // backward PID
     PID_KD_Back = KD_Back[SPD_30];
 
   } else if (BaseSpeed <= 40) {
@@ -215,10 +207,9 @@ void InitialSpeed() {
     RightBaseSpeed = BaseSpeed - R[SPD_40];
     BackLeftBaseSpeed = BaseSpeed - BL[SPD_40];
     BackRightBaseSpeed = BaseSpeed - BR[SPD_40];
-    PID_KP_Front = KP[SPD_40];  //forward PID
-    PID_KD_Front = KD[SPD_40];  //11
-
-    PID_KP_Back = KP_Back[SPD_40];  //backward PID
+    PID_KP_Front = KP[SPD_40];       // forward PID
+    PID_KD_Front = KD[SPD_40];
+    PID_KP_Back = KP_Back[SPD_40];   // backward PID
     PID_KD_Back = KD_Back[SPD_40];
 
   } else if (BaseSpeed <= 50) {
@@ -226,10 +217,9 @@ void InitialSpeed() {
     RightBaseSpeed = BaseSpeed - R[SPD_50];
     BackLeftBaseSpeed = BaseSpeed - BL[SPD_50];
     BackRightBaseSpeed = BaseSpeed - BR[SPD_50];
-    PID_KP_Front = KP[SPD_50];  //forward PID
-    PID_KD_Front = KD[SPD_50]; //14
-
-    PID_KP_Back = KP_Back[SPD_50];  //backward PID
+    PID_KP_Front = KP[SPD_50];       // forward PID
+    PID_KD_Front = KD[SPD_50];
+    PID_KP_Back = KP_Back[SPD_50];   // backward PID
     PID_KD_Back = KD_Back[SPD_50];
 
   } else if (BaseSpeed <= 60) {
@@ -237,10 +227,9 @@ void InitialSpeed() {
     RightBaseSpeed = BaseSpeed - R[SPD_60];
     BackLeftBaseSpeed = BaseSpeed - BL[SPD_60];
     BackRightBaseSpeed = BaseSpeed - BR[SPD_60];
-    PID_KP_Front = KP[SPD_60];  //forward PID
-    PID_KD_Front = KD[SPD_60];//17
-
-    PID_KP_Back = KP_Back[SPD_60];  //backward PID
+    PID_KP_Front = KP[SPD_60];       // forward PID
+    PID_KD_Front = KD[SPD_60];
+    PID_KP_Back = KP_Back[SPD_60];   // backward PID
     PID_KD_Back = KD_Back[SPD_60];
 
   } else if (BaseSpeed <= 70) {
@@ -248,10 +237,9 @@ void InitialSpeed() {
     RightBaseSpeed = BaseSpeed - R[SPD_70];
     BackLeftBaseSpeed = BaseSpeed - BL[SPD_70];
     BackRightBaseSpeed = BaseSpeed - BR[SPD_70];
-    PID_KP_Front = KP[SPD_70];  //forward PID
-    PID_KD_Front = KD[SPD_70];//20
-
-    PID_KP_Back = KP_Back[SPD_70];  //backward PID
+    PID_KP_Front = KP[SPD_70];       // forward PID
+    PID_KD_Front = KD[SPD_70];
+    PID_KP_Back = KP_Back[SPD_70];   // backward PID
     PID_KD_Back = KD_Back[SPD_70];
 
   } else if (BaseSpeed <= 80) {
@@ -259,10 +247,9 @@ void InitialSpeed() {
     RightBaseSpeed = BaseSpeed - R[SPD_80];
     BackLeftBaseSpeed = BaseSpeed - BL[SPD_80];
     BackRightBaseSpeed = BaseSpeed - BR[SPD_80];
-    PID_KP_Front = KP[SPD_80];  //forward PID
-    PID_KD_Front = KD[SPD_80]; //20
-
-    PID_KP_Back = KP_Back[SPD_80];  //backward PID
+    PID_KP_Front = KP[SPD_80];       // forward PID
+    PID_KD_Front = KD[SPD_80];
+    PID_KP_Back = KP_Back[SPD_80];   // backward PID
     PID_KD_Back = KD_Back[SPD_80];
 
   } else if (BaseSpeed <= 90) {
@@ -270,10 +257,9 @@ void InitialSpeed() {
     RightBaseSpeed = BaseSpeed - R[SPD_90];
     BackLeftBaseSpeed = BaseSpeed - BL[SPD_90];
     BackRightBaseSpeed = BaseSpeed - BR[SPD_90];
-    PID_KP_Front = KP[SPD_90];  //forward PID
-    PID_KD_Front = KD[SPD_90];//22
-
-    PID_KP_Back = KP_Back[SPD_90];  //backward PID
+    PID_KP_Front = KP[SPD_90];       // forward PID
+    PID_KD_Front = KD[SPD_90];
+    PID_KP_Back = KP_Back[SPD_90];   // backward PID
     PID_KD_Back = KD_Back[SPD_90];
 
   } else {
@@ -281,10 +267,9 @@ void InitialSpeed() {
     RightBaseSpeed = BaseSpeed - R[SPD_100];
     BackLeftBaseSpeed = BaseSpeed - BL[SPD_100];
     BackRightBaseSpeed = BaseSpeed - BR[SPD_100];
-    PID_KP_Front = KP[SPD_100];  //forward PID
-    PID_KD_Front = KD[SPD_100];//25
-
-    PID_KP_Back = KP_Back[SPD_100];  //backward PID
+    PID_KP_Front = KP[SPD_100];      // forward PID
+    PID_KD_Front = KD[SPD_100];
+    PID_KP_Back = KP_Back[SPD_100];  // backward PID
     PID_KD_Back = KD_Back[SPD_100];
   }
 }
