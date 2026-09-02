@@ -154,8 +154,8 @@ void turndegree(int Speed, int relative_degree) {
   int min_speed = 10;
   int max_speed = Speed;
   float speed_scale = max_speed / 30.0;  // kp/kd ถูกจูนไว้ที่ speed=30 เดิม; สเกลตาม Speed ที่เรียกจริง ไม่งั้น Speed สูงๆ จะไปไม่ถึงเพดานที่ตั้งไว้
-  float kp = 0.9 ;
-  float kd = 0.6 ;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
+  float kp = 0.9;
+  float kd = 0.6;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
   float small_angle_threshold = 15;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = 1.0;
   float previous_error = 0;
@@ -191,15 +191,15 @@ void turndegree(int Speed, int relative_degree) {
 
     previous_error = error;
   }
-   SetG(5);
+  SetG(5);
 }
 
 void turndegreeb(int Speed, int relative_degree) {
   int min_speed = 10;
   int max_speed = Speed;
   float speed_scale = max_speed / 30.0;  // kp/kd ถูกจูนไว้ที่ speed=30 เดิม; สเกลตาม Speed ที่เรียกจริง ไม่งั้น Speed สูงๆ จะไปไม่ถึงเพดานที่ตั้งไว้
-  float kp = 0.9 ;
-  float kd = 0.6 ;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
+  float kp = 0.9;
+  float kd = 0.6;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
   float small_angle_threshold = 5;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = 1.0;
   float previous_error = 0;
@@ -238,18 +238,8 @@ void turndegreeb(int Speed, int relative_degree) {
   SetG(5);
 }
 
-
-
-
 void turndegree_none(int Speed, int relative_degree) {
- int min_speed = Speed;
-  int max_speed = Speed;
-  float speed_scale = max_speed / 30.0;  // kp/kd ถูกจูนไว้ที่ speed=30 เดิม; สเกลตาม Speed ที่เรียกจริง ไม่งั้น Speed สูงๆ จะไปไม่ถึงเพดานที่ตั้งไว้
-  float kp = 0.9 ;
-  float kd = 0.6 ;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = 25;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = 1.0;
-  float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
 
   if (target_degree > 180.0f) target_degree -= 360.0f;
@@ -263,36 +253,19 @@ void turndegree_none(int Speed, int relative_degree) {
     if (error > 180.0f) error -= 360.0f;
     else if (error < -180.0f) error += 360.0f;
 
-    int pd_value = (kp * error) + (kd * (error - previous_error));
-
-    if (pd_value > max_speed) pd_value = max_speed;
-    else if (pd_value < -max_speed) pd_value = -max_speed;
-
-    if (error > stop_threshold && error < small_angle_threshold) {
-      Motor(min_speed, 1);
-    } else if (error < -stop_threshold && error > -small_angle_threshold) {
-      Motor(-1, min_speed);
-    } else if (error >= -stop_threshold && error <= stop_threshold) {
+    if (error >= -stop_threshold && error <= stop_threshold) {
       //MotorStop();
       break;
+    } else if (error > 0) {
+      Motor(Speed, -1);
     } else {
-      if (error <= 0) Motor(-1, -pd_value);
-      else Motor(pd_value, 1);
+      Motor(-1, Speed);
     }
-
-    previous_error = error;
   }
 }
 
 void turndegreeb_none(int Speed, int relative_degree) {
-   int min_speed = Speed;
-  int max_speed = Speed;
-  float speed_scale = max_speed / 30.0;  // kp/kd ถูกจูนไว้ที่ speed=30 เดิม; สเกลตาม Speed ที่เรียกจริง ไม่งั้น Speed สูงๆ จะไปไม่ถึงเพดานที่ตั้งไว้
-  float kp = 0.9 ;
-  float kd = 0.6 ;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = 25;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = 1.0;
-  float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
 
   if (target_degree > 180.0f) target_degree -= 360.0f;
@@ -306,27 +279,16 @@ void turndegreeb_none(int Speed, int relative_degree) {
     if (error > 180.0f) error -= 360.0f;
     else if (error < -180.0f) error += 360.0f;
 
-    int pd_value = (kp * error) + (kd * (error - previous_error));
-
-    if (pd_value > max_speed) pd_value = max_speed;
-    else if (pd_value < -max_speed) pd_value = -max_speed;
-
-    if (error > stop_threshold && error < small_angle_threshold) {
-      Motor(-1, -min_speed);
-    } else if (error < -stop_threshold && error > -small_angle_threshold) {
-      Motor(-min_speed, 1);
-    } else if (error >= -stop_threshold && error <= stop_threshold) {
+    if (error >= -stop_threshold && error <= stop_threshold) {
       //MotorStop();
       break;
+    } else if (error > 0) {
+      Motor(1, -Speed);
     } else {
-      if (error <= 0) Motor(pd_value, 1);
-      else Motor(-1, -pd_value);
+      Motor(-Speed, 1);
     }
-
-    previous_error = error;
   }
 }
-
 
 void spindegree(int relative_degree) {
   spindegree(30, relative_degree);
@@ -516,7 +478,7 @@ void bbcmgs(int Speed, float distance) {
     }
     delayMicroseconds(80);
   }
- // Motor(0, 0);
+  // Motor(0, 0);
 }
 
 void bbcmg(int Speed, float distance_cm) {
@@ -599,13 +561,9 @@ void tlg(int Angle) {turndegree(-abs(Angle));}
 
 void trg(int Angle) {turndegree(abs(Angle));}
 
-
-
 void tlbg(int Angle) {turndegreeb(abs(Angle));}
 
 void trbg(int Angle) {turndegreeb(-abs(Angle));}
-
-
 
 void slg(int spd, int Angle) {spindegree(spd, -abs(Angle));}
 
@@ -618,27 +576,25 @@ void trg(int spd, int Angle) {turndegree(spd, abs(Angle));}
 void tlbg(int spd, int Angle) {turndegreeb(spd, abs(Angle));}
 void trbg(int spd, int Angle) {turndegreeb(spd, -abs(Angle));}
 
+// ---------- ต่อเนื่อง (chainable, ไม่หยุดกลางทาง): เลี้ยวซ้ายแล้วขวา / ขวาแล้วซ้าย ----------
 
-//------------------------------------------------------------
+void tlrg(int Angle) {turndegree_none(-abs(Angle)); turndegree_none(abs(Angle)); SetG(50);}
+void trlg(int Angle) {turndegree_none(abs(Angle)); turndegree_none(-abs(Angle)); SetG(50);}
 
-void tlrg(int Angle){turndegree_none(-abs(Angle)); turndegree_none(abs(Angle)); SetG(50);}
-void trlg(int Angle){turndegree_none(abs(Angle)); turndegree_none(-abs(Angle)); SetG(50);}
+void tlrg(int spd, int Angle) {turndegree_none(spd, -abs(Angle)); turndegree_none(spd, abs(Angle)); SetG(spd);}
+void trlg(int spd, int Angle) {turndegree_none(spd, abs(Angle)); turndegree_none(spd, -abs(Angle)); SetG(spd);}
 
-void tlrg(int spd,int Angle){turndegree_none(spd, -abs(Angle)); turndegree_none(spd, abs(Angle)); SetG(spd); }
-void trlg(int spd,int Angle){turndegree_none(spd, abs(Angle)); turndegree_none(spd, -abs(Angle)); SetG(spd);}
+void tlrg(int spd, int Angle, int Angle2) {turndegree_none(spd, -abs(Angle)); turndegree_none(spd, abs(Angle2)); /*SetG(spd);*/}
+void trlg(int spd, int Angle, int Angle2) {turndegree_none(spd, abs(Angle)); turndegree_none(spd, -abs(Angle2)); /*SetG(spd);*/}
 
-void tlrg(int spd,int Angle,int Angle2){turndegree_none(spd, -abs(Angle)); turndegree_none(spd, abs(Angle2)); /*SetG(spd);*/}
-void trlg(int spd,int Angle ,int Angle2){turndegree_none(spd, abs(Angle)); turndegree_none(spd, -abs(Angle2));/* SetG(spd);*/ }
+void tlrbg(int Angle) {turndegreeb_none(abs(Angle)); turndegreeb_none(-abs(Angle)); /*SetGB(50);*/}
+void trlbg(int Angle) {turndegreeb_none(-abs(Angle)); turndegreeb_none(abs(Angle)); /*SetGB(50);*/}
 
-void tlrbg(int Angle){turndegreeb_none(abs(Angle)); turndegreeb_none(-abs(Angle)); /*SetGB(50);*/}
-void trlbg(int Angle){turndegreeb_none(-abs(Angle)); turndegreeb_none(abs(Angle)); /*SetGB(50);*/}
+void tlrbg(int spd, int Angle) {turndegreeb_none(spd, abs(Angle)); turndegreeb_none(spd, -abs(Angle)); /*SetGB(spd);*/}
+void trlbg(int spd, int Angle) {turndegreeb_none(spd, -abs(Angle)); turndegreeb_none(spd, abs(Angle)); /*SetGB(spd);*/}
 
-void tlrbg(int spd,int Angle){turndegreeb_none(spd,abs(Angle)); turndegreeb_none(spd,-abs(Angle)); /*SetGB(spd);*/ }
-void trlbg(int spd,int Angle){turndegreeb_none(spd,-abs(Angle)); turndegreeb_none(spd,abs(Angle));/*SetGB(spd);*/ }
-
-void tlrbg(int spd,int Angle,int Angle2){turndegreeb_none(spd, abs(Angle)); turndegreeb_none(spd, -abs(Angle2)); /*SetG(spd);*/}
-void trlbg(int spd,int Angle,int Angle2){turndegreeb_none(spd, -abs(Angle)); turndegreeb_none(spd, abs(Angle2)); /*SetG(spd);*/}
-
+void tlrbg(int spd, int Angle, int Angle2) {turndegreeb_none(spd, abs(Angle)); turndegreeb_none(spd, -abs(Angle2)); /*SetG(spd);*/}
+void trlbg(int spd, int Angle, int Angle2) {turndegreeb_none(spd, -abs(Angle)); turndegreeb_none(spd, abs(Angle2)); /*SetG(spd);*/}
 
 void ToCenterLG() {
   BZon();
