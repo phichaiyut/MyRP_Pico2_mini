@@ -10,17 +10,16 @@ void Setting() {
 
   /******************** LINE SENSOR CONFIG ********************/
   RefLineValue(500);        // ค่า threshold เซนเซอร์หน้า-หลัง
-  RefCenterLineValue(500);  // ค่า threshold เซนเซอร์คู่กลาง
+  RefCenterLineValue(400);  // ค่า threshold เซนเซอร์คู่กลาง
   TrackLineColor(0);        // 0 = พื้นขาวเส้นดำ | 1 = พื้นดำเส้นขาว
   Dottedline(0);            // 0 = ไม่มีเส้นประ | 1 = มีเส้นประ
 
   /******************** LINE CENTERING ********************/
   // set_line_center(0);        // เดินธรรมดา เข้ากลางหุ่น
   set_line_center(1);                        // เดินตามเส้น เข้ากลางหุ่น
-  SetToCenterSpeed(30);                      // ความเร็วเข้ากลางหุ่น
-  set_slow_kp_kd(0.005, 0.05, 0.005, 0.05);  //kp kd ของความเร็วช้าเข้ากลางหุ่น
+  SetToCenterSpeed(20);                      // ความเร็วเข้ากลางหุ่น
   /******************** TURN & SPEED CONFIG ********************/
-  SetTurnSpeed(40);  // ความเร็วเลี้ยวหุ่น (l L ) (r R)
+  SetTurnSpeed(50);  // ความเร็วเลี้ยวหุ่น (l L ) (r R)
 
 
   TurnSpeedLeft(15, 80, 60);   // เลี้ยวซ้าย (q Q)
@@ -33,9 +32,9 @@ void Setting() {
   // SetRobotPID(0.014, 0.04);  // PID หลัก (ยังไม่ใช้)
 
   /******************** LINE POSITION ********************/
-  set_position_line(2500);    // 0–5000 | 1000=ซ้าย 2500=กลาง 4000=ขวา
-  set_position_line_l(500);   // 0–5000 | วิ่งโค้งซ้าย
-  set_position_line_r(4500);  // 0–5000 | วิ่งโค้งขวา
+  set_position_line(3500);    // 0–5000 | 1000=ซ้าย 2500=กลาง 4000=ขวา
+  set_position_line_l(1500);   // 0–5000 | วิ่งโค้งซ้าย
+  set_position_line_r(5500);  // 0–5000 | วิ่งโค้งขวา
   /******************** DISTANCE SENSOR ********************/
   SetAnalogDistance(28);  // A0–A3 เซนเซอร์ตรวจจับวัตถุ
 
