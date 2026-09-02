@@ -239,12 +239,12 @@ int readPositionB_none(int Track, int noise) {
   unsigned char i, online = 0;
   unsigned long avg = 0;
   unsigned long  sum = 0;
-  static int last_value = ((6 - 1) * 1000) / 2;
+  static int last_value = ((8 - 1) * 1000) / 2;
   ReadCalibrateB();
   // int S[6] = {B[1], B[2], B[3], B[4], B[5], B[6]};
   for (i = 0; i < 8; i++) {
     // int values = S[i];
-    int values = F[i];
+    int values = B[i];
     if (values > Track) online = 1;
     if (values > noise) {
       avg += (long)(values) * (i * 1000L);
@@ -252,7 +252,7 @@ int readPositionB_none(int Track, int noise) {
     }
   }
   if (!online) {
-    if (last_value < (6 - 1) * 1000 / 2) return set_position;
+    if (last_value < (8 - 1) * 1000 / 2) return set_position;
     else return set_position;
   }
   if (sum == 0) return last_value;
