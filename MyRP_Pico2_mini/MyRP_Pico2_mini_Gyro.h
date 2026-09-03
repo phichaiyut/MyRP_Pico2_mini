@@ -5,8 +5,6 @@
 my_BMI160 my;
 
 float current_degree = 0;
-char lastTurnDirGC = 0;  // 'L' หรือ 'R' : ทิศของ tlgc/trgc ครั้งล่าสุด ใช้กำหนดว่าครั้งถัดไปต้องหยุด+min_speed หรือไม่
-char lastTurnDirGBC = 0;  // 'L' หรือ 'R' : ทิศของ tlbgc/trbgc ครั้งล่าสุด (เวอร์ชันถอยหลัง)
 float previous_errorG = 0;
 float previous_errorGB = 0;
 
@@ -153,7 +151,6 @@ void spindegree(int Speed, int relative_degree) {
 void turndegree(int Speed, int relative_degree) {
   int min_speed = 10;
   int max_speed = Speed;
-  float speed_scale = max_speed / 30.0;  // kp/kd ถูกจูนไว้ที่ speed=30 เดิม; สเกลตาม Speed ที่เรียกจริง ไม่งั้น Speed สูงๆ จะไปไม่ถึงเพดานที่ตั้งไว้
   float kp = 0.9;
   float kd = 0.6;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
   float small_angle_threshold = 15;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
@@ -197,7 +194,6 @@ void turndegree(int Speed, int relative_degree) {
 void turndegreeb(int Speed, int relative_degree) {
   int min_speed = 10;
   int max_speed = Speed;
-  float speed_scale = max_speed / 30.0;  // kp/kd ถูกจูนไว้ที่ speed=30 เดิม; สเกลตาม Speed ที่เรียกจริง ไม่งั้น Speed สูงๆ จะไปไม่ถึงเพดานที่ตั้งไว้
   float kp = 0.9;
   float kd = 0.6;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
   float small_angle_threshold = 5;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
@@ -240,8 +236,8 @@ void turndegreeb(int Speed, int relative_degree) {
 
 void turndegree_none(int Speed, int relative_degree) {
   float stop_threshold = 1.0;
-  float target_degree = gyroZ() + relative_degree;
-
+  // float target_degree = gyroZ() + relative_degree;
+float target_degree = current_degree + relative_degree;
   if (target_degree > 180.0f) target_degree -= 360.0f;
   if (target_degree < -180.0f) target_degree += 360.0f;
   current_degree = target_degree;
@@ -266,8 +262,8 @@ void turndegree_none(int Speed, int relative_degree) {
 
 void turndegreeb_none(int Speed, int relative_degree) {
   float stop_threshold = 1.0;
-  float target_degree = gyroZ() + relative_degree;
-
+  // float target_degree = gyroZ() + relative_degree;
+float target_degree = current_degree + relative_degree;
   if (target_degree > 180.0f) target_degree -= 360.0f;
   if (target_degree < -180.0f) target_degree += 360.0f;
   current_degree = target_degree;
