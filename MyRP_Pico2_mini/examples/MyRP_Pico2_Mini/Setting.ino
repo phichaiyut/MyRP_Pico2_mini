@@ -1,9 +1,8 @@
 void Setting() {
   set_Freq("Coreless_Motors");  // หรือ "DC_Motors"
   RobotSetupSpeed();
+
   /******************** CALIBRATION ********************/
-
-
   clampSensorValueF(100, 800);  //สำหรับกรองค่า  calibrate
   clampSensorValueB(100, 800);  //สำหรับกรองค่า  calibrate
   clampSensorValueC(0, 1000);   //สำหรับกรองค่า  calibrate
@@ -18,9 +17,9 @@ void Setting() {
   // set_line_center(0);        // เดินธรรมดา เข้ากลางหุ่น
   set_line_center(1);                        // เดินตามเส้น เข้ากลางหุ่น
   SetToCenterSpeed(20);                      // ความเร็วเข้ากลางหุ่น
+
   /******************** TURN & SPEED CONFIG ********************/
   SetTurnSpeed(50);  // ความเร็วเลี้ยวหุ่น (l L ) (r R)
-
 
   TurnSpeedLeft(15, 80, 60);   // เลี้ยวซ้าย (q Q)
   TurnSpeedRight(80, 15, 60);  // เลี้ยวขวา (e E)
@@ -52,7 +51,6 @@ void Setting() {
   // SerialPositionB();                 // ตำแหน่งเส้น (หลัง)
   // SerialPositionFB();                 // ตำแหน่งเส้น (หน้า-หลัง)
 }
-
 
 void RobotSetupSpeed() {
   SetBalanceSpeedForward();   // ตั้งค่าความสมดุลมอเตอร์เดินหน้า

@@ -11,7 +11,6 @@ int closeL = 105, closeR = 105;        //หุบลูกเล็ก close
 int closeBigL = 75, closeBigR = 75;  //หุบลูกใหญ่ big_box
 int up45 = 40;
 
-
 void arm_ready()  //--------->> แขนลง กางฝ่ามือออกเตรียมเข้าไปคีบ
 {
   MotorStop();
@@ -93,7 +92,6 @@ void arm_big_box()  //--------->>  คีบกล่องใหญ่
   delay(100);
 }
 
-
 void arm_big_box_up()  //--------->>  คีบกล่องใหญ่
 {
   MotorStop();
@@ -154,9 +152,6 @@ void arm_open_r() {
   delay(100);
 }
 
-
-
-
 //ปรับความเร็วเซอร์โว
 
 void arm_ready(int spd)  //--------->> แขนลง กางฝ่ามือออกเตรียมเข้าไปคีบ
@@ -215,7 +210,6 @@ void arm_big_box(int spd)  //--------->>  คีบกล่องใหญ่
   armupdown(servo_down, spd);
   arm_left_right(servoL_open - closeBigL, servoR_open - closeBigR, spd);
 }
-
 
 void arm_big_box_up(int spd)  //--------->>  คีบกล่องใหญ่
 {
