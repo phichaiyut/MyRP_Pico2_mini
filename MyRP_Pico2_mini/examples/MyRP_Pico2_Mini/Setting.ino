@@ -1,8 +1,9 @@
 void Setting() {
   set_Freq("Coreless_Motors");  // หรือ "DC_Motors"
   RobotSetupSpeed();
-
   /******************** CALIBRATION ********************/
+
+
   clampSensorValueF(100, 800);  //สำหรับกรองค่า  calibrate
   clampSensorValueB(100, 800);  //สำหรับกรองค่า  calibrate
   clampSensorValueC(0, 1000);   //สำหรับกรองค่า  calibrate
@@ -17,12 +18,12 @@ void Setting() {
   // set_line_center(0);        // เดินธรรมดา เข้ากลางหุ่น
   set_line_center(1);                        // เดินตามเส้น เข้ากลางหุ่น
   SetToCenterSpeed(20);                      // ความเร็วเข้ากลางหุ่น
-
   /******************** TURN & SPEED CONFIG ********************/
   SetTurnSpeed(50);  // ความเร็วเลี้ยวหุ่น (l L ) (r R)
 
-  TurnSpeedLeft(15, 80, 60);   // เลี้ยวซ้าย (q Q)
-  TurnSpeedRight(80, 15, 60);  // เลี้ยวขวา (e E)
+
+  TurnSpeedLeft(20, 70, 40);   // เลี้ยวซ้าย (q Q)
+  TurnSpeedRight(70, 20, 40);  // เลี้ยวขวา (e E)
 
   TurnBackSpeedLeft(15, 80, 60);   // เลี้ยวซ้าย (q Q)
   TurnBackSpeedRight(80, 15, 60);  // เลี้ยวขวา (e E)
@@ -52,6 +53,7 @@ void Setting() {
   // SerialPositionFB();                 // ตำแหน่งเส้น (หน้า-หลัง)
 }
 
+
 void RobotSetupSpeed() {
   SetBalanceSpeedForward();   // ตั้งค่าความสมดุลมอเตอร์เดินหน้า
   SetBalanceSpeedBackward();  // ตั้งค่าความสมดุลมอเตอร์ถอยหลัง
@@ -62,16 +64,28 @@ void RobotSetupSpeed() {
 // ==================== PID เดินหน้า ====================
 
 void SetKpKd() {
-  Set_KP_KD(SPD_10, 0.003, 0.03);   // ความเร็ว 10
-  Set_KP_KD(SPD_20, 0.008, 0.10);   // ความเร็ว 20
-  Set_KP_KD(SPD_30, 0.008, 0.10);   // ความเร็ว 30
-  Set_KP_KD(SPD_40, 0.012, 0.16);   // ความเร็ว 40
-  Set_KP_KD(SPD_50, 0.010, 0.12);   // ความเร็ว 50
-  Set_KP_KD(SPD_60, 0.018, 0.20);   // ความเร็ว 60
-  Set_KP_KD(SPD_70, 0.018, 0.20);   // ความเร็ว 70
-  Set_KP_KD(SPD_80, 0.024, 0.24);   // ความเร็ว 80
-  Set_KP_KD(SPD_90, 0.027, 0.27);   // ความเร็ว 90
+  // Set_KP_KD(SPD_10, 0.003, 0.03);   // ความเร็ว 10
+  // Set_KP_KD(SPD_20, 0.008, 0.10);   // ความเร็ว 20
+  // Set_KP_KD(SPD_30, 0.008, 0.10);   // ความเร็ว 30
+  // Set_KP_KD(SPD_40, 0.012, 0.16);   // ความเร็ว 40
+  // Set_KP_KD(SPD_50, 0.010, 0.12);   // ความเร็ว 50
+  // Set_KP_KD(SPD_60, 0.018, 0.20);   // ความเร็ว 60
+  // Set_KP_KD(SPD_70, 0.018, 0.20);   // ความเร็ว 70
+  // Set_KP_KD(SPD_80, 0.024, 0.24);   // ความเร็ว 80
+  // Set_KP_KD(SPD_90, 0.027, 0.27);   // ความเร็ว 90
+  // Set_KP_KD(SPD_100, 0.030, 0.30);  // ความเร็ว 100
+  
+  Set_KP_KD(SPD_10,  0.003, 0.03);  // ความเร็ว 10
+  Set_KP_KD(SPD_20,  0.008, 0.10);  // ความเร็ว 20
+  Set_KP_KD(SPD_30,  0.008, 0.10);  // ความเร็ว 30
+  Set_KP_KD(SPD_40,  0.012, 0.16);  // ความเร็ว 40
+  Set_KP_KD(SPD_50,  0.008, 0.12);  // ความเร็ว 50
+  Set_KP_KD(SPD_60,  0.012, 0.16);  // ความเร็ว 60
+  Set_KP_KD(SPD_70,  0.018, 0.20);  // ความเร็ว 70
+  Set_KP_KD(SPD_80,  0.020 , 0.20);  // ความเร็ว 80
+  Set_KP_KD(SPD_90,  0.027, 0.27);  // ความเร็ว 90
   Set_KP_KD(SPD_100, 0.030, 0.30);  // ความเร็ว 100
+
 }
 
 // ==================== PID ถอยหลัง ====================

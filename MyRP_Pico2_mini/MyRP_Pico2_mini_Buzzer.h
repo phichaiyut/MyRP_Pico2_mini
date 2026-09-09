@@ -25,7 +25,7 @@ void BZoff() {
 }
 
 void beep(int freq, int dur) {
-  tone(9, freq, dur);
+  tone(buzzer_pin, freq, dur);
   delay(dur + 50);
 }
 

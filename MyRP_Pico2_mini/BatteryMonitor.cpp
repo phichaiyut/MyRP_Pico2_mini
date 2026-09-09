@@ -63,7 +63,6 @@ void BatteryMonitor::update() {
         _rawVoltage = newV;
         _voltage = 0.87f * _voltage + 0.13f * newV;   // Filter นุ่มนวล
     }
-
 }
 
 void BatteryMonitor::update_led() {
@@ -158,7 +157,6 @@ void BatteryMonitor::buzzerAlertNonBlocking() {
     tone(BUZZER_PIN, 2200, 120);
     delay(100);
     tone(BUZZER_PIN, 3000, 120);
-
 }
 
 void BatteryMonitor::writePCF(uint8_t value) {
@@ -166,8 +164,3 @@ void BatteryMonitor::writePCF(uint8_t value) {
     Wire.write(value);
     Wire.endTransmission();
 }
-
-// ================================================
-// ฟังก์ชันชื่อเดิม updateBattery() สำหรับ compatibility
-// ================================================
-

@@ -18,7 +18,7 @@ float my_BMI160::_accelY_prev          = 0.0f;
 float my_BMI160::_accelZ_prev          = 0.0f;
 
 // Constructor
-my_BMI160::my_BMI160(uint8_t address) 
+my_BMI160::my_BMI160(uint8_t address)
   : _address(address), _wire(nullptr) {}
 
 // ตั้งค่า I2C bus
@@ -33,7 +33,6 @@ bool my_BMI160::begin() {
   }
 
   _wire->begin();
- //_wire->setClock(200000);
 
   // Check chip ID
   _wire->beginTransmission(_address);
@@ -155,7 +154,6 @@ void my_BMI160::resetAngles() {
   _angleZ = 0.0f;
 }
 
-
 void my_BMI160::writeRegister(uint8_t reg, uint8_t value) {
   _wire->beginTransmission(_address);
   _wire->write(reg);
@@ -180,14 +178,16 @@ void my_BMI160::readAccelGyro(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx
     *ax = *ay = *az = *gx = *gy = *gz = 0;
   }
 }
-bool my_BMI160::calibrateGyro() {
-  const int CALIBRATION_SAMPLES = 500;
+// เก็บค่าเฉลี่ย gyro/accel จาก `samples` ตัวอย่างแล้วบันทึกเป็น offset ใหม่ เดิมโค้ดนี้
+// ถูกคัดลอกซ้ำ 4 ที่ (calibrateGyro/calibrate/recalibrateGyro/recalibrate) ต่างกันแค่
+// จำนวนตัวอย่างกับว่าตรวจ variance หรือไม่ จึงรวมเป็นฟังก์ชันเดียวใช้ร่วมกัน
+bool my_BMI160::runGyroCalibration(int samples, bool checkVariance) {
   float sumX = 0.0f, sumY = 0.0f, sumZ = 0.0f;
   float sumAX = 0.0f, sumAY = 0.0f, sumAZ = 0.0f;
   float varX = 0.0f, varY = 0.0f, varZ = 0.0f;
   int16_t gx, gy, gz;
 
-  for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
+  for (int i = 0; i < samples; i++) {
     int16_t ax, ay, az;
     readAccelGyro(&ax, &ay, &az, &gx, &gy, &gz);
     float gX = gx / 16.4f;
@@ -202,139 +202,42 @@ bool my_BMI160::calibrateGyro() {
     delay(2);
   }
 
-  float meanX = sumX / CALIBRATION_SAMPLES;
-  float meanY = sumY / CALIBRATION_SAMPLES;
-  float meanZ = sumZ / CALIBRATION_SAMPLES;
-  varX = varX / CALIBRATION_SAMPLES - meanX * meanX;
-  varY = varY / CALIBRATION_SAMPLES - meanY * meanY;
-  varZ = varZ / CALIBRATION_SAMPLES - meanZ * meanZ;
+  float meanX = sumX / samples;
+  float meanY = sumY / samples;
+  float meanZ = sumZ / samples;
+  varX = varX / samples - meanX * meanX;
+  varY = varY / samples - meanY * meanY;
+  varZ = varZ / samples - meanZ * meanZ;
 
-  if (varX > 0.1f || varY > 0.1f || varZ > 0.1f) {
+  if (checkVariance && (varX > 0.1f || varY > 0.1f || varZ > 0.1f)) {
     return false;
   }
 
   _gyroOffsetX = meanX;
   _gyroOffsetY = meanY;
   _gyroOffsetZ = meanZ;
-  _accelX_prev = sumAX / CALIBRATION_SAMPLES;
-  _accelY_prev = sumAY / CALIBRATION_SAMPLES;
-  _accelZ_prev = sumAZ / CALIBRATION_SAMPLES;
+  _accelX_prev = sumAX / samples;
+  _accelY_prev = sumAY / samples;
+  _accelZ_prev = sumAZ / samples;
   return true;
 }
+
+bool my_BMI160::calibrateGyro() {
+  return runGyroCalibration(500, true);
+}
+
 bool my_BMI160::calibrate() {
-  const int CALIBRATION_SAMPLES = 500;
-  float sumX = 0.0f, sumY = 0.0f, sumZ = 0.0f;
-  float sumAX = 0.0f, sumAY = 0.0f, sumAZ = 0.0f;
-  float varX = 0.0f, varY = 0.0f, varZ = 0.0f;
-  int16_t gx, gy, gz;
-
-  for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
-    int16_t ax, ay, az;
-    readAccelGyro(&ax, &ay, &az, &gx, &gy, &gz);
-    float gX = gx / 16.4f;
-    float gY = gy / 16.4f;
-    float gZ = gz / 16.4f;
-    float aX = ax / 16384.0f;
-    float aY = ay / 16384.0f;
-    float aZ = az / 16384.0f;
-    sumX += gX; sumY += gY; sumZ += gZ;
-    sumAX += aX; sumAY += aY; sumAZ += aZ;
-    varX += gX * gX; varY += gY * gY; varZ += gZ * gZ;
-    delay(2);
-  }
-
-  float meanX = sumX / CALIBRATION_SAMPLES;
-  float meanY = sumY / CALIBRATION_SAMPLES;
-  float meanZ = sumZ / CALIBRATION_SAMPLES;
-  varX = varX / CALIBRATION_SAMPLES - meanX * meanX;
-  varY = varY / CALIBRATION_SAMPLES - meanY * meanY;
-  varZ = varZ / CALIBRATION_SAMPLES - meanZ * meanZ;
-
-  if (varX > 0.1f || varY > 0.1f || varZ > 0.1f) {
-    return false;
-  }
-
-  _gyroOffsetX = meanX;
-  _gyroOffsetY = meanY;
-  _gyroOffsetZ = meanZ;
-  _accelX_prev = sumAX / CALIBRATION_SAMPLES;
-  _accelY_prev = sumAY / CALIBRATION_SAMPLES;
-  _accelZ_prev = sumAZ / CALIBRATION_SAMPLES;
-  return true;
+  return runGyroCalibration(500, true);
 }
 
 void my_BMI160::recalibrateGyro() {
-  const int CALIBRATION_SAMPLES = 100;
-  float sumX = 0.0f, sumY = 0.0f, sumZ = 0.0f;
-  float sumAX = 0.0f, sumAY = 0.0f, sumAZ = 0.0f;
-  float varX = 0.0f, varY = 0.0f, varZ = 0.0f;
-  int16_t gx, gy, gz;
-
-  for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
-    int16_t ax, ay, az;
-    readAccelGyro(&ax, &ay, &az, &gx, &gy, &gz);
-    float gX = gx / 16.4f;
-    float gY = gy / 16.4f;
-    float gZ = gz / 16.4f;
-    float aX = ax / 16384.0f;
-    float aY = ay / 16384.0f;
-    float aZ = az / 16384.0f;
-    sumX += gX; sumY += gY; sumZ += gZ;
-    sumAX += aX; sumAY += aY; sumAZ += aZ;
-    varX += gX * gX; varY += gY * gY; varZ += gZ * gZ;
-    delay(2);
-  }
-
-  float meanX = sumX / CALIBRATION_SAMPLES;
-  float meanY = sumY / CALIBRATION_SAMPLES;
-  float meanZ = sumZ / CALIBRATION_SAMPLES;
-  varX = varX / CALIBRATION_SAMPLES - meanX * meanX;
-  varY = varY / CALIBRATION_SAMPLES - meanY * meanY;
-  varZ = varZ / CALIBRATION_SAMPLES - meanZ * meanZ;
-
-  _gyroOffsetX = meanX;
-  _gyroOffsetY = meanY;
-  _gyroOffsetZ = meanZ;
-  _accelX_prev = sumAX / CALIBRATION_SAMPLES;
-  _accelY_prev = sumAY / CALIBRATION_SAMPLES;
-  _accelZ_prev = sumAZ / CALIBRATION_SAMPLES;
+  runGyroCalibration(100, false);
 }
+
 void my_BMI160::recalibrate() {
-  const int CALIBRATION_SAMPLES = 50;
-  float sumX = 0.0f, sumY = 0.0f, sumZ = 0.0f;
-  float sumAX = 0.0f, sumAY = 0.0f, sumAZ = 0.0f;
-  float varX = 0.0f, varY = 0.0f, varZ = 0.0f;
-  int16_t gx, gy, gz;
-
-  for (int i = 0; i < CALIBRATION_SAMPLES; i++) {
-    int16_t ax, ay, az;
-    readAccelGyro(&ax, &ay, &az, &gx, &gy, &gz);
-    float gX = gx / 16.4f;
-    float gY = gy / 16.4f;
-    float gZ = gz / 16.4f;
-    float aX = ax / 16384.0f;
-    float aY = ay / 16384.0f;
-    float aZ = az / 16384.0f;
-    sumX += gX; sumY += gY; sumZ += gZ;
-    sumAX += aX; sumAY += aY; sumAZ += aZ;
-    varX += gX * gX; varY += gY * gY; varZ += gZ * gZ;
-    delay(2);
-  }
-
-  float meanX = sumX / CALIBRATION_SAMPLES;
-  float meanY = sumY / CALIBRATION_SAMPLES;
-  float meanZ = sumZ / CALIBRATION_SAMPLES;
-  varX = varX / CALIBRATION_SAMPLES - meanX * meanX;
-  varY = varY / CALIBRATION_SAMPLES - meanY * meanY;
-  varZ = varZ / CALIBRATION_SAMPLES - meanZ * meanZ;
-
-  _gyroOffsetX = meanX;
-  _gyroOffsetY = meanY;
-  _gyroOffsetZ = meanZ;
-  _accelX_prev = sumAX / CALIBRATION_SAMPLES;
-  _accelY_prev = sumAY / CALIBRATION_SAMPLES;
-  _accelZ_prev = sumAZ / CALIBRATION_SAMPLES;
+  runGyroCalibration(50, false);
 }
+
 void reset_gyro160(my_BMI160& gyro) {
   gyro.resetAngles();
 }

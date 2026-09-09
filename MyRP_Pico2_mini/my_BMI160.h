@@ -55,6 +55,11 @@ private:
   void writeRegister(uint8_t reg, uint8_t value);
   void readAccelGyro(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int16_t *gy, int16_t *gz);
   bool calibrateGyro();
+
+  // เก็บค่าเฉลี่ย gyro/accel จากจำนวนตัวอย่างที่กำหนด แล้วบันทึกเป็น offset ใหม่
+  // checkVariance = true จะปฏิเสธผล (คืน false) ถ้าหุ่นไม่นิ่งพอระหว่างคาลิเบรต
+  // (ฟังก์ชันภายในที่ calibrateGyro()/calibrate()/recalibrateGyro()/recalibrate() เรียกร่วมกัน)
+  bool runGyroCalibration(int samples, bool checkVariance);
 };
 
 // ฟังก์ชันภายนอก (ถ้าต้องการใช้)

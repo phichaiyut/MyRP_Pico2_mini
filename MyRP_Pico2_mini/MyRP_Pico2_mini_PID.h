@@ -9,12 +9,12 @@ int LTurnSpdL, LTurnSpdR, TurnDelayL;
 int RTurnSpdL, RTurnSpdR, TurnDelayR;
 int LTurnBackSpdL, LTurnBackSpdR, TurnBackDelayL;
 int RTurnBackSpdL, RTurnBackSpdR, TurnBackDelayR;
-// int set_position = 2500;
-int set_position = 3500;
-//int set_positionL = 500;
-int set_positionL = 1500;
-// int set_positionR = 4500;
-int set_positionR = 5500;
+int set_position = 2500;
+// int set_position = 3500;
+int set_positionL = 500;
+// int set_positionL = 1500;
+int set_positionR = 4500;
+// int set_positionR = 5500;
 float slow_kp_f = 0.005, slow_kd_f = 0.05;
 float slow_kp_b = 0.005, slow_kd_b = 0.05;
 float slow_kpf = 0.005, slow_kdf = 0.05;
@@ -45,6 +45,7 @@ void SetSpinDebounceCount(int n) {
 
 // ---------- Config ----------
 void SetFG(int time);
+void SetRobotAngle();
 
 void SetToCenterSpeed(int tctv) {
   tct = tctv;
@@ -58,17 +59,14 @@ void SetToCenterSpeed(int tctv) {
   bctR = BackRightBaseSpeed;
 
   // Slow PID
-  slow_kpf = PID_KP_Front;
-  slow_kdf = PID_KD_Front;
-  slow_kpb = PID_KP_Back;
-  slow_kdb = PID_KD_Back;
+  slow_kp_f = PID_KP_Front;
+  slow_kd_f = PID_KD_Front;
+  slow_kp_b = PID_KP_Back;
+  slow_kd_b = PID_KD_Back;
 }
 
 void set_slow_kp_kd(float kp_f, float kd_f, float kp_b, float kd_b) {
-  slow_kp_f = kp_f;
-  slow_kd_f = kd_f;
-  slow_kp_b = kp_b;
-  slow_kd_b = kd_b;
+  
 }
 
 void Dottedline(int x) {
@@ -155,12 +153,12 @@ int readPositionF(int Track, int noise) {
   unsigned char i, online = 0;
   unsigned long avg = 0;
   unsigned long  sum = 0;
-  static int last_value = ((8 - 1) * 1000) / 2;
+  static int last_value = ((6 - 1) * 1000) / 2;
   ReadCalibrateF();
-  // int S[6] = {F[1], F[2], F[3], F[4], F[5], F[6]};
-  for (i = 0; i < 8; i++) {
-    // int values = S[i];
-    int values = F[i];
+  int S[6] = {F[1], F[2], F[3], F[4], F[5], F[6]};
+  for (i = 0; i < 6; i++) {
+    int values = S[i];
+    // int values = F[i];
     if (values > Track) online = 1;
     if (values > noise) {
       avg += (long)(values) * (i * 1000L);
@@ -172,7 +170,7 @@ int readPositionF(int Track, int noise) {
       return last_value;
     }
     if (last_value < set_position) return 0 * 1000;
-    else return 7 * 1000;
+    else return 5 * 1000;
   }
   //if (sum == 0) return last_value;
   last_value = avg / sum;
@@ -183,12 +181,12 @@ int readPositionB(int Track, int noise) {
   unsigned char i, online = 0;
   unsigned long avg = 0;
   unsigned long  sum = 0;
-  static int last_value = ((8 - 1) * 1000) / 2;
+  static int last_value = ((6 - 1) * 1000) / 2;
   ReadCalibrateB();
-  // int S[6] = {B[1], B[2], B[3], B[4], B[5], B[6]};
-  for (i = 0; i < 8; i++) {
-    // int values = S[i];
-    int values = B[i];
+  int S[6] = {B[1], B[2], B[3], B[4], B[5], B[6]};
+  for (i = 0; i < 6; i++) {
+    int values = S[i];
+    // int values = B[i];
     if (values > Track) online = 1;
     if (values > noise) {
       avg += (long)(values) * (i * 1000L);
@@ -200,7 +198,7 @@ int readPositionB(int Track, int noise) {
       return last_value;
     }
     if (last_value < set_position) return 0 * 1000;
-    else return 7 * 1000;
+    else return 5 * 1000;
   }
   //if (sum == 0) return last_value;
   last_value = avg / sum;
@@ -211,12 +209,12 @@ int readPositionF_none(int Track, int noise) {
   unsigned char i, online = 0;
   unsigned long avg = 0;
   unsigned long  sum = 0;
-  static int last_value = ((8 - 1) * 1000) / 2;
+  static int last_value = ((6 - 1) * 1000) / 2;
   ReadCalibrateF();
-  // int S[6] = {F[1], F[2], F[3], F[4], F[5], F[6]};
-  for (i = 0; i < 8; i++) {
-    // int values = S[i];
-    int values = F[i];
+  int S[6] = {F[1], F[2], F[3], F[4], F[5], F[6]};
+  for (i = 0; i < 6; i++) {
+    int values = S[i];
+    // int values = F[i];
     if (values > Track) online = 1;
     if (values > noise) {
       avg += (long)(values) * (i * 1000L);
@@ -227,7 +225,7 @@ int readPositionF_none(int Track, int noise) {
     if (dottedline) {
       return last_value;
     }
-    if (last_value < (8 - 1) * 1000 / 2) return set_position;
+    if (last_value < (6 - 1) * 1000 / 2) return set_position;
     else return set_position;
   }
   //if (sum == 0) return last_value;
@@ -239,12 +237,12 @@ int readPositionB_none(int Track, int noise) {
   unsigned char i, online = 0;
   unsigned long avg = 0;
   unsigned long  sum = 0;
-  static int last_value = ((8 - 1) * 1000) / 2;
+  static int last_value = ((6 - 1) * 1000) / 2;
   ReadCalibrateB();
-  // int S[6] = {B[1], B[2], B[3], B[4], B[5], B[6]};
-  for (i = 0; i < 8; i++) {
-    // int values = S[i];
-    int values = B[i];
+  int S[6] = {B[1], B[2], B[3], B[4], B[5], B[6]};
+  for (i = 0; i < 6; i++) {
+    int values = S[i];
+    // int values = B[i];
     if (values > Track) online = 1;
     if (values > noise) {
       avg += (long)(values) * (i * 1000L);
@@ -252,7 +250,7 @@ int readPositionB_none(int Track, int noise) {
     }
   }
   if (!online) {
-    if (last_value < (8 - 1) * 1000 / 2) return set_position;
+    if (last_value < (6 - 1) * 1000 / 2) return set_position;
     else return set_position;
   }
   //if (sum == 0) return last_value;
@@ -337,7 +335,7 @@ void PIDF_none(int SpeedL, int SpeedR, float Kp, float Kd) {
   }
 
   float Error = Pos - set_position;
-  float PID_Value = (Kp * Error) + (Kd * (Error - LastError_F_none));
+  float PID_Value = (Kp * Error) + (Kd * (Error - LastError_F));
   LastError_F_none = Error;
 
   float LeftPower  = SpeedL + PID_Value;
@@ -364,7 +362,7 @@ void PIDB_none(int SpeedL, int SpeedR, float Kp, float Kd) {
     Pos = readPositionB_none(200, 50);
   }
   float Error    = Pos - set_position;
-  float PID_Value = (Kp * Error) + (Kd * (Error - LastError_B_none));
+  float PID_Value = (Kp * Error) + (Kd * (Error - LastError_B));
   LastError_B_none = Error;
   float LeftPower  = SpeedL + PID_Value;
   float RightPower = SpeedR - PID_Value;
@@ -544,6 +542,22 @@ void BackCenter() {
   }
 }
 
+
+void ToFront(){
+  while(1){
+    PIDF(tctL,tctR,slow_kp_f,slow_kd_f);
+    ReadCalibrateF();
+    if(F[0] > Ref || F[7] > Ref) break;
+  }
+}
+
+void ToBack(){
+  while(1){
+    PIDB(tctL,tctR,slow_kp_f,slow_kd_f);
+    ReadCalibrateB();
+    if(B[0] > Ref || B[7] > Ref) break;
+  }
+}
 // ---------- Turns / Spins ----------
 
 void TurnLeft() {
@@ -1211,7 +1225,7 @@ void ffl(int Speed, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if (F[0] > Ref ) {
+    if (F[0] > Ref || F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref ) {
       break;
     }
   }
@@ -1223,7 +1237,7 @@ void ffl0(int Speed, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if (F[0] > Ref) {
+    if (F[0] > Ref || F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref) {
       break;
     }
   }
@@ -1249,7 +1263,7 @@ void bbl(int Speed, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
     ReadCalibrateB();
-    if (B[0] > Ref ) {
+    if (B[0] > Ref || B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref ) {
       break;
     }
   }
@@ -1287,7 +1301,7 @@ void ffr(int Speed, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if ( F[7] > Ref) break;
+    if ( F[7] > Ref || F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref) break;
   }
   TrackSelectF(Speed, select);
 }
@@ -1298,7 +1312,7 @@ void ffr7(int Speed, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if (F[7] > Ref) break;
+    if (F[7] > Ref || F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref) break;
   }
   TrackSelectF(Speed, select);
 }
@@ -1320,7 +1334,7 @@ void bbr(int Speed, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
     ReadCalibrateB();
-    if ( B[7] > Ref) {
+    if ( B[7] > Ref || B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref) {
       break;
     }
   }
@@ -1432,7 +1446,7 @@ void ffnum(int Speed, char select, int numm) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if (F[numm] > Ref) break;
+    if (F[numm] > Ref ||  F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref) break;
   }
   TrackSelectF(Speed, select);
 }
@@ -1443,7 +1457,7 @@ void bbnum(int Speed, char select, int numm) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
     ReadCalibrateB();
-    if (B[numm] > Ref) break;
+    if (B[numm] > Ref || B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref) break;
   }
   TrackSelectB(Speed, select);
 }
@@ -1597,6 +1611,7 @@ void balancef(int Counter) {
     MotorStop();
     delay(50);
   }
+  SetRobotAngle();
 }
 void setf(int Counter) {
   balancef(Counter);
@@ -1628,12 +1643,76 @@ void balanceb(int Counter) {
     MotorStop();
     delay(50);
   }
+  SetRobotAngle();
 }
 
 void setb(int Counter) {
   balanceb(Counter);
 }
 
+void balancefc(int Counter) {
+  Move(-10, -10, 50);
+  for (int i = 0; i <= Counter; i++) {
+    Move(-10, -10, 50);
+    while (1) {
+      Motor(10, 10);
+      ReadCalibrateC();
+      if (C[1] > RefC) {
+        while (1) {
+          Motor(0, 10);
+          ReadCalibrateC();
+          if (C[0] > RefC) { MotorStop(); break; }
+        }
+      }
+      if (C[0] > RefC) {
+        while (1) {
+          Motor(10, 0);
+          ReadCalibrateC();
+          if (C[1] > RefC) { MotorStop(); break; }
+        }
+      }
+      if (C[1] > RefC && C[0] > RefC) { MotorStop(); break; }
+    }
+    MotorStop();
+    delay(50);
+  }
+  SetRobotAngle();
+}
+
+void balancebc(int Counter) {
+  Move(10, 10, 50);
+  for (int i = 0; i <= Counter; i++) {
+    Move(10, 10, 50);
+    while (1) {
+      Motor(-12, -12);
+      ReadCalibrateC();
+      if (C[1] > RefC) {
+        while (1) {
+          Motor(0, -10);
+          ReadCalibrateC();
+          if (C[0] > RefC) { MotorStop(); break; }
+        }
+      }
+      if (C[0] > Ref) {
+        while (1) {
+          Motor(-10, 0);
+          ReadCalibrateC();
+          if (C[1] > RefC) { MotorStop(); break; }
+        }
+      }
+      if (C[1] > Ref && C[0] > Ref) { MotorStop(); break; }
+    }
+    MotorStop();
+    delay(50);
+  }SetRobotAngle();
+}
+
+void setfc(int Counter) {
+  balancefc(Counter);
+}
+void setbc(int Counter) {
+  balancebc(Counter);
+}
 void set_f(int num) {
   for (int i = 0; i < num; i++) {
     while (1) {
@@ -1656,6 +1735,7 @@ void set_f(int num) {
       Motor(-1, -1);
     }
   }
+  SetRobotAngle();
 }
 
 void set_b(int num) {
@@ -1679,7 +1759,7 @@ void set_b(int num) {
       delay(50);
       Motor(1, 1);
     }
-  }
+  }SetRobotAngle();
 }
 
 void set_fc(int num) {
@@ -1703,7 +1783,7 @@ void set_fc(int num) {
       delay(50);
       Motor(-1, -1);
     }
-  }
+  }SetRobotAngle();
 }
 
 void set_bc(int num) {
@@ -1727,7 +1807,7 @@ void set_bc(int num) {
       delay(50);
       Motor(1, 1);
     }
-  }
+  }SetRobotAngle();
 }
 
 void SerialPositionF() {
@@ -1770,7 +1850,7 @@ void ffcl(int Speed, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if (F[0] > Ref) break;
+    if (F[0] > Ref || F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref) break;
   }
   TrackSelectF(Speed, select);
   set_position = temp;
@@ -1784,7 +1864,7 @@ void ffcr(int Speed, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if (F[7] > Ref) break;
+    if (F[7] > Ref || F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref) break;
   }
   TrackSelectF(Speed, select);
   set_position = temp;
@@ -1854,7 +1934,7 @@ void bbcl(int Speed, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
     ReadCalibrateB();
-    if (B[0] > Ref) break;
+    if (B[0] > Ref ||  B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref) break;
   }
   TrackSelectB(Speed, select);
   set_position = temp;
@@ -1868,7 +1948,7 @@ void bbcr(int Speed, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
     ReadCalibrateB();
-    if (B[7] > Ref) break;
+    if (B[7] > Ref || B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref) break;
   }
   TrackSelectB(Speed, select);
   set_position = temp;

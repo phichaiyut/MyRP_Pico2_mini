@@ -54,9 +54,9 @@ void RobotSetup() {
   pinMode(BIN1, OUTPUT);
   pinMode(BIN2, OUTPUT);
 
-  adc.begin(14, 15, 16, 13);   // Initialize ADC ครั้งเดียว (ตั้งขา clk/mosi/miso + CS ชุด B = 13)
-  pinMode(17, OUTPUT);          // เตรียมขา CS ชุด A = 17 ไว้เช่นกัน (สลับด้วย adc.setCS() ภายหลัง)
-  digitalWrite(17, HIGH);
+  adc.begin(14, 15, 16, 13);  // ตั้งขา clk/mosi/miso ครั้งเดียว + CS ชุด B (13)
+  pinMode(17, OUTPUT);        // เตรียมขา CS ชุด A (17) ไว้ด้วย — สลับสองชุดด้วย adc.setCS()
+  digitalWrite(17, HIGH);     // ใน read_sensorA()/read_sensorB() (ดู MyRP_Pico2_mini_Sensor.h)
 
   loadCalibration();
   loadCalibration_LOCAL();
