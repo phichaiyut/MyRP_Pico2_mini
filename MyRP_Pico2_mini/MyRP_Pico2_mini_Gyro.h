@@ -613,23 +613,23 @@ void trbg(int spd, int Angle) {turndegreeb(spd, -abs(Angle));}
 
 // ---------- ต่อเนื่อง (chainable, ไม่หยุดกลางทาง): เลี้ยวซ้ายแล้วขวา / ขวาแล้วซ้าย ----------
 
-void tlrg(int Angle) {turndegree_none(-abs(Angle));  turndegree_none(abs(Angle)); SetG(50);}
-void trlg(int Angle) {turndegree_none(abs(Angle));  turndegree_none(-abs(Angle)); SetG(50);}
+void tlrg(int Angle) {turndegree_none(-abs(Angle));  turndegree(abs(Angle)); SetG(50);}
+void trlg(int Angle) {turndegree_none(abs(Angle));  turndegree(-abs(Angle)); SetG(50);}
 
-void tlrg(int spd, int Angle) {turndegree_none(spd, -abs(Angle));  turndegree_none(spd, abs(Angle)); SetG(spd);}
-void trlg(int spd, int Angle) {turndegree_none(spd, abs(Angle));  turndegree_none(spd, -abs(Angle)); SetG(spd);}
+void tlrg(int spd, int Angle) {turndegree_none(spd, -abs(Angle));  turndegree(spd, abs(Angle)); SetG(spd);}
+void trlg(int spd, int Angle) {turndegree_none(spd, abs(Angle));  turndegree(spd, -abs(Angle)); SetG(spd);}
 
-void tlrg(int spd, int Angle, int Angle2) {turndegree_none(spd, -abs(Angle)); turndegree_none(spd, abs(Angle2)); /*SetG(spd);*/}
-void trlg(int spd, int Angle, int Angle2) {turndegree_none(spd, abs(Angle));  turndegree_none(spd, -abs(Angle2)); /*SetG(spd);*/}
+void tlrg(int spd, int Angle, int Angle2) {turndegree_none(spd, -abs(Angle)); turndegree(spd, abs(Angle2)); /*SetG(spd);*/}
+void trlg(int spd, int Angle, int Angle2) {turndegree_none(spd, abs(Angle));  turndegree(spd, -abs(Angle2)); /*SetG(spd);*/}
 
-void tlrbg(int Angle) {turndegreeb_none(abs(Angle));  turndegreeb_none(-abs(Angle)); /*SetGB(50);*/}
-void trlbg(int Angle) {turndegreeb_none(-abs(Angle));  turndegreeb_none(abs(Angle)); /*SetGB(50);*/}
+void tlrbg(int Angle) {turndegreeb_none(abs(Angle));  turndegreeb(-abs(Angle)); /*SetGB(50);*/}
+void trlbg(int Angle) {turndegreeb_none(-abs(Angle));  turndegreeb(abs(Angle)); /*SetGB(50);*/}
 
-void tlrbg(int spd, int Angle) {turndegreeb_none(spd, abs(Angle));  turndegreeb_none(spd, -abs(Angle)); /*SetGB(spd);*/}
-void trlbg(int spd, int Angle) {turndegreeb_none(spd, -abs(Angle));  turndegreeb_none(spd, abs(Angle)); /*SetGB(spd);*/}
+void tlrbg(int spd, int Angle) {turndegreeb_none(spd, abs(Angle));  turndegreeb(spd, -abs(Angle)); /*SetGB(spd);*/}
+void trlbg(int spd, int Angle) {turndegreeb_none(spd, -abs(Angle));  turndegreeb(spd, abs(Angle)); /*SetGB(spd);*/}
 
-void tlrbg(int spd, int Angle, int Angle2) {turndegreeb_none(spd, abs(Angle));  turndegreeb_none(spd, -abs(Angle2)); /*SetG(spd);*/}
-void trlbg(int spd, int Angle, int Angle2) {turndegreeb_none(spd, -abs(Angle));  turndegreeb_none(spd, abs(Angle2)); /*SetG(spd);*/}
+void tlrbg(int spd, int Angle, int Angle2) {turndegreeb_none(spd, abs(Angle));  turndegreeb(spd, -abs(Angle2)); /*SetG(spd);*/}
+void trlbg(int spd, int Angle, int Angle2) {turndegreeb_none(spd, -abs(Angle));  turndegreeb(spd, abs(Angle2)); /*SetG(spd);*/}
 
 void ToCenterLG() {
   BZon();
