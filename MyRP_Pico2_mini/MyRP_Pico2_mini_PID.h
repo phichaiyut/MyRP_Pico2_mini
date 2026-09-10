@@ -1225,7 +1225,7 @@ void ffl(int Speed, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if (F[0] > Ref || F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref ) {
+    if (F[0] > Ref ||( F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref) ) {
       break;
     }
   }
@@ -1237,7 +1237,7 @@ void ffl0(int Speed, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if (F[0] > Ref || F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref) {
+    if (F[0] > Ref || (F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref)) {
       break;
     }
   }
@@ -1263,7 +1263,7 @@ void bbl(int Speed, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
     ReadCalibrateB();
-    if (B[0] > Ref || B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref ) {
+    if (B[0] > Ref || (B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref )) {
       break;
     }
   }
@@ -1275,7 +1275,7 @@ void bbl0(int Speed, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
     ReadCalibrateB();
-    if (B[0] > Ref) {
+    if (B[0] > Ref || (B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref )) {
       break;
     }
   }
@@ -1301,7 +1301,7 @@ void ffr(int Speed, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if ( F[7] > Ref || F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref) break;
+    if ( F[7] > Ref || (F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref)) break;
   }
   TrackSelectF(Speed, select);
 }
@@ -1312,7 +1312,7 @@ void ffr7(int Speed, char select) {
   while (1) {
     PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
     ReadCalibrateF();
-    if (F[7] > Ref || F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref) break;
+    if (F[7] > Ref || (F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref)) break;
   }
   TrackSelectF(Speed, select);
 }
@@ -1334,7 +1334,7 @@ void bbr(int Speed, char select) {
   while (1) {
     PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
     ReadCalibrateB();
-    if ( B[7] > Ref || B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref) {
+    if ( B[7] > Ref || (B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref)) {
       break;
     }
   }
