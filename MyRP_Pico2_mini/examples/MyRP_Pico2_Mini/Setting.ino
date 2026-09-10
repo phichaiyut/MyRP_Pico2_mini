@@ -32,9 +32,9 @@ void Setting() {
   // SetRobotPID(0.014, 0.04);  // PID หลัก (ยังไม่ใช้)
 
   /******************** LINE POSITION ********************/
-  set_position_line(3500);    // 0–5000 | 1000=ซ้าย 2500=กลาง 4000=ขวา
-  set_position_line_l(1500);   // 0–5000 | วิ่งโค้งซ้าย
-  set_position_line_r(5500);  // 0–5000 | วิ่งโค้งขวา
+  set_position_line(2500);    // 0–5000 | 1000=ซ้าย 2500=กลาง 4000=ขวา
+  set_position_line_l(1000);   // 0–5000 | วิ่งโค้งซ้าย
+  set_position_line_r(3500);  // 0–5000 | วิ่งโค้งขวา
   /******************** DISTANCE SENSOR ********************/
   SetAnalogDistance(28);  // A0–A3 เซนเซอร์ตรวจจับวัตถุ
 
