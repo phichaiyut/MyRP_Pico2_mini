@@ -153,7 +153,7 @@ void turndegree(int Speed, int relative_degree) {
   int max_speed = Speed;
   float kp = 0.9;
   float kd = 0.6;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = 5;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
+  float small_angle_threshold = 25;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = 1.0;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
@@ -196,7 +196,7 @@ void turndegreeb(int Speed, int relative_degree) {
   int max_speed = Speed;
   float kp = 0.9;
   float kd = 0.6;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = 5;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
+  float small_angle_threshold = 25;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = 1.0;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
