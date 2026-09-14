@@ -65,4 +65,4 @@ private:
 // ฟังก์ชันภายนอก (ถ้าต้องการใช้)
 void reset_gyro160(my_BMI160& gyro);
 
-#endif
+#endif // my_BMI160_H

@@ -149,11 +149,11 @@ void spindegree(int Speed, int relative_degree) {
 }
 
 void turndegree(int Speed, int relative_degree) {
-  int min_speed = 10;
+  int min_speed = 10;  // เพิ่มจาก 10: ล้อเดียวแรงไม่พอหมุนถึงเป้าหมายบางครั้ง
   int max_speed = Speed;
-  float kp = 0.9;
+  float kp = 1.2;  // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
   float kd = 0.6;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = 25;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
+  float small_angle_threshold = 5;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = 1.0;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
@@ -192,11 +192,11 @@ void turndegree(int Speed, int relative_degree) {
 }
 
 void turndegreeb(int Speed, int relative_degree) {
-  int min_speed = 10;
+  int min_speed = 10;  // เพิ่มจาก 10: ล้อเดียวแรงไม่พอหมุนถึงเป้าหมายบางครั้ง
   int max_speed = Speed;
-  float kp = 0.9;
+  float kp = 1.2;  // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
   float kd = 0.6;  // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = 25;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
+  float small_angle_threshold = 5;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = 1.0;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
@@ -275,8 +275,7 @@ void rotatedegree(int SpeedL, int SpeedR, int relative_degree) {
 
 void turndegree_none(int Speed, int relative_degree) {
   float stop_threshold = 1.0;
-  // float target_degree = gyroZ() + relative_degree;
-float target_degree = current_degree + relative_degree;
+  float target_degree = current_degree + relative_degree;
   if (target_degree > 180.0f) target_degree -= 360.0f;
   if (target_degree < -180.0f) target_degree += 360.0f;
   current_degree = target_degree;
@@ -289,7 +288,6 @@ float target_degree = current_degree + relative_degree;
     else if (error < -180.0f) error += 360.0f;
 
     if (error >= -stop_threshold && error <= stop_threshold) {
-      //MotorStop();
       break;
     } else if (error > 0) {
       Motor(Speed, -1);
@@ -301,8 +299,7 @@ float target_degree = current_degree + relative_degree;
 
 void turndegreeb_none(int Speed, int relative_degree) {
   float stop_threshold = 1.0;
-  // float target_degree = gyroZ() + relative_degree;
-float target_degree = current_degree + relative_degree;
+  float target_degree = current_degree + relative_degree;
   if (target_degree > 180.0f) target_degree -= 360.0f;
   if (target_degree < -180.0f) target_degree += 360.0f;
   current_degree = target_degree;
@@ -315,7 +312,6 @@ float target_degree = current_degree + relative_degree;
     else if (error < -180.0f) error += 360.0f;
 
     if (error >= -stop_threshold && error <= stop_threshold) {
-      //MotorStop();
       break;
     } else if (error > 0) {
       Motor(1, -Speed);
@@ -398,6 +394,7 @@ void fftimerg(int Speed, int totalTime) {
     RunG(LeftBaseSpeed, RightBaseSpeed);
   }
 }
+
 void bbtimerg(int Speed, int totalTime) {
   BaseSpeed = Speed;
   InitialSpeed();
@@ -609,6 +606,7 @@ void tlg(int spd, int Angle) {turndegree(spd, -abs(Angle));}
 void trg(int spd, int Angle) {turndegree(spd, abs(Angle));}
 
 void tlbg(int spd, int Angle) {turndegreeb(spd, abs(Angle));}
+
 void trbg(int spd, int Angle) {turndegreeb(spd, -abs(Angle));}
 
 // ---------- ต่อเนื่อง (chainable, ไม่หยุดกลางทาง): เลี้ยวซ้ายแล้วขวา / ขวาแล้วซ้าย ----------

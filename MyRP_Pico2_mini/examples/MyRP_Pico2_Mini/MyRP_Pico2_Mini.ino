@@ -28,7 +28,7 @@ void setup() {
 }
 
 void loop() {
-  // HoldAngle();
+  HoldAngle();
   Serial.println(gyroZ());
   sw();
   delay(200);

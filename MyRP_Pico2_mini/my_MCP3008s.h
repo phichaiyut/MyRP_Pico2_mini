@@ -28,4 +28,4 @@ private:
   SPIClass* _spi;
 };
 
-#endif
+#endif // my_MCP3008s_h
