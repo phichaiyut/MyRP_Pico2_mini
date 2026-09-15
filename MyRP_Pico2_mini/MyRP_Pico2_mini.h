@@ -184,6 +184,9 @@ void sw() {
     Serial.print(" ");
     Serial.print(analogRead(27));
     Serial.print(" ");
+    Serial.print("   Gyro: ");
+    Serial.print(gyroZ());
+
     Serial.println();
     delay(100);  // อ่าน/แสดงผลทุก 100ms กันสแปม Serial/สแกน ADC รัวๆ
 
