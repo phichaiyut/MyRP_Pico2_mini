@@ -35,6 +35,9 @@
 // set_line_center(0);        // เดินธรรมดาแล้วเข้ากึ่งกลางหุ่น (ไม่สนเส้น)
 // set_line_center(1);        // เดินตามเส้น PID แล้วค่อยเข้ากึ่งกลางหุ่น
 // SetToCenterSpeed(speed);   // ความเร็วที่ใช้ตอนเข้ากึ่งกลาง (ToCenter/ToCenterL/ToCenterR ฯลฯ)
+// set_brake_fc(ff, fc);      // เวลาเบรก (ms) ตอนเดินหน้า: ff = เบรกหลังผ่านแยกก่อนเลี้ยว q/e/Q/E (ค่าเริ่มต้น 5) | fc = เบรกตอน ToCenter (ค่าเริ่มต้น 30)
+// set_brake_bc(bf, bc);      // เวลาเบรก (ms) ตอนถอยหลัง: bf (ค่าเริ่มต้น 10, ยังไม่มีฟังก์ชันใดใช้ค่านี้) | bc = เบรกตอน BackCenter (ค่าเริ่มต้น 20)
+//                            // ⚠️ e/E/Q ของ bb ใช้ค่า ff จาก set_brake_fc() ไม่ใช่ bf
 
 // ── ความเร็วเลี้ยว/หมุน ────────────────────────────────
 // SetTurnSpeed(speed);              // ความเร็ว default ของ spinl()/spinr() (เมื่อไม่ระบุ speed เอง)
@@ -42,6 +45,10 @@
 // TurnSpeedRight(l, r, delay);      // เหมือนกันแต่ TurnRight() (เลี้ยว e/E)
 // TurnBackSpeedLeft(l, r, delay);   // เหมือน TurnSpeedLeft แต่ใช้ตอนถอยหลัง (TurnLeft_B)
 // TurnBackSpeedRight(l, r, delay);  // เหมือน TurnSpeedRight แต่ใช้ตอนถอยหลัง (TurnRight_B)
+// TurnSpeedLeftBackF(l, r, delay);  TurnSpeedRightBackF(l, r, delay);   // ตั้งค่าให้ TurnLeftBackF()/TurnRightBackF() (ถอยเลี้ยวล้อเดียว เช็คเซนเซอร์หน้า F[])
+// TurnSpeedLeftBackB(l, r, delay);  TurnSpeedRightBackB(l, r, delay);   // ตั้งค่าให้ TurnLeftBackB()/TurnRightBackB() (ถอยเลี้ยวล้อเดียว เช็คเซนเซอร์หลัง B[])
+// ⚠️ ค่า l, r ของทุก TurnSpeed*() ถูกส่งเข้า Motor() ตรง ๆ แบบมีเครื่องหมาย (ติดลบ = ล้อหมุนถอย)
+//    เช่น TurnSpeedLeft(-20, 70, 40) = ล้อซ้ายถอย 20 ล้อขวาไปหน้า 70 | ใส่ 0 = ล้อนั้นหยุด (เลี้ยวล้อเดียว)
 // TurnSpeedLeftBackF(l, r, delay);  // ความเร็วล้อเดียวถอยหลัง เช็คเส้นด้วยเซนเซอร์หน้า F[] ตอน TurnLeftBackF()
 // TurnSpeedRightBackF(l, r, delay); // เหมือนกันแต่ TurnRightBackF()
 // TurnSpeedLeftBackB(l, r, delay);  // ความเร็วล้อเดียวถอยหลัง เช็คเส้นด้วยเซนเซอร์หลัง B[] ตอน TurnLeftBackB()
@@ -99,13 +106,17 @@
  *   'p' || 'P' : วิ่งทะลุผ่านทางแยก/เส้นขวางด้วยความเร็ว spd ตรง ๆ (ไม่ใช้ PID) จนสองเซนเซอร์ริมพ้นเส้น (เช็คซ้ำ 2 รอบกันสัญญาณรบกวน) มีเสียง buzzer ระหว่างวิ่งผ่าน
  *                'P' ต่างจาก 'p' แค่เรียก ToFront()/ToBack() วิ่งเข้าหาเส้นด้วย PID ก่อนเริ่มนับเงื่อนไข
  *   'c' || 'C' : เข้ากึ่งกลางทางแยกแล้วหยุด (ToCenter()/BackCenter()) | 'C' เรียก ToFront()/ToBack() ก่อน
+ *                ก่อนหยุดมีพัลส์เบรกสวนทิศ ระยะเวลา break_fc (ff) / break_bc (bb) ms — ปรับด้วย set_brake_fc()/set_brake_bc()
  *   'l' || 'L' : เข้ากึ่งกลางทางแยกแล้วหมุนซ้าย 90° (spinl()) — พิมพ์เล็ก/ใหญ่ทำงาน "เหมือนกันทุกประการ" ในตระกูลนี้ (case ถูก fall-through รวมกัน)
  *   'r' || 'R' : เข้ากึ่งกลางทางแยกแล้วหมุนขวา 90° (spinr()) — พิมพ์เล็ก/ใหญ่เหมือนกัน
- *   'q' || 'Q' : ff = เลี้ยวโค้งซ้าย (แตะขอบซ้าย F[0] ด้วยความเร็วครึ่งหนึ่งของ tctL/tctR ก่อน แล้ว TurnLeft())
- *                bb = เลี้ยวโค้ง "ขวา" (แตะขอบขวา B[7] แล้ว TurnRight_B())  ⚠️ ทิศสลับกับ ff!
- *   'e' || 'E' : ff = เลี้ยวโค้งขวา (แตะขอบขวา F[7] แล้ว TurnRight())
- *                bb = เลี้ยวโค้ง "ซ้าย" (แตะขอบซ้าย B[0] แล้ว TurnLeft_B())  ⚠️ ทิศสลับกับ ff!
- *                ('Q'/'E' ต่างจากตัวพิมพ์เล็กแค่เรียก ToFront()/ToBack() ก่อนเข้าเงื่อนไขแตะขอบ)
+ *   'q' || 'Q' : ff = เดินหน้าด้วย tctL/tctR จนเซนเซอร์ F[0] และ F[7] พ้นเส้นทั้งคู่ (เช็คซ้ำ 2 รอบ) → พัลส์เบรกถอย break_ff ms → TurnLeft()
+ *                bb = ถอยจนเซนเซอร์ B[0] และ B[7] พ้นเส้นทั้งคู่ → TurnRight_B()  ⚠️ ทิศสลับกับ ff!
+ *   'e' || 'E' : ff = เงื่อนไขเดียวกับ q แต่จบด้วย TurnRight()
+ *                bb = เงื่อนไขเดียวกับ q แต่จบด้วย TurnLeft_B()  ⚠️ ทิศสลับกับ ff!
+ *                ('Q'/'E' ต่างจากตัวพิมพ์เล็กแค่เรียก ToFront()/ToBack() ก่อนเข้าเงื่อนไข)
+ *                รายละเอียดที่ต่างของ bb: รอบแรกวิ่งด้วย bctL/bctR รอบสองครึ่งความเร็ว (q/Q ตัวเล็กไม่มีพัลส์เบรก break_ff,
+ *                'e' ตัวเล็กไม่เรียก BZoff() → buzzer อาจค้างดัง ถ้าต้องการเบรก/ปิดเสียงให้ใช้ตัวพิมพ์ใหญ่ 'Q'/'E')
+ *                พัลส์เบรกของ bb (e/E/Q) ใช้ break_ff จาก set_brake_fc() ไม่ใช่ break_bf จาก set_brake_bc()
  *   'a' || 'A' : เข้ากึ่งกลางแล้วหมุนซ้ายด้วยเซนเซอร์หลัง (spinl_B()) — ทำงานเหมือนกันทั้ง ff/bb (ไม่สลับทิศแบบ q/e)
  *   'd' || 'D' : เข้ากึ่งกลางแล้วหมุนขวาด้วยเซนเซอร์หลัง (spinr_B()) — ทำงานเหมือนกันทั้ง ff/bb
  *   'b' || 'B' : เข้ากึ่งกลาง (ModeToCenter/ModeToCenterBack) แล้ววิ่งต่อจนเซนเซอร์ "ฝั่งตรงข้ามทิศทางวิ่ง" เจอเส้น
@@ -129,10 +140,11 @@
  *                พิมพ์เล็ก/ใหญ่เหมือนกัน — ไม่มี ToFront()/ToBack() นำหน้าแบบตระกูล (A)
  *   'c' || 'C' : ปรับตรง gyro 20 รอบ แล้วเข้ากึ่งกลางทางแยกด้วยเซนเซอร์ C[] แล้วเบรกหยุด (พิมพ์เล็ก/ใหญ่เหมือนกัน)
  *   'b' || 'B' : ปรับตรง gyro 20 รอบ วิ่งเข้ากึ่งกลาง (C[]) ก่อน แล้ววิ่งต่อจนเซนเซอร์ B[] เจอเส้นอีกครั้ง (ทั้ง G และ GB เช็ค B[] เหมือนกัน) แล้วสะบัดมอเตอร์สั้น ๆ แล้วหยุด
- *   's' || 'S' : เบรกสั้น ๆ ทันที ไม่มีโหมดรอ PID แบบ 'S' ของ (A) (พิมพ์เล็ก/ใหญ่เหมือนกัน)
- *                G:  ถอยสั้น ๆ (10→1) แล้วหยุด | GB: เดินหน้าสั้น ๆ (10→1) แล้วหยุด
- *   'a'/'A', 'd'/'D', 'g'/'G' : ⚠️ ไม่มี case รองรับในตระกูลนี้ ตกไปเงื่อนไข else เหมือนอักขระอื่น ๆ ที่ไม่รู้จัก → เรียก SetG(100) เสมอ
- *                                 (แม้แต่ TrackSelectGB ก็เรียก SetG(100) ไม่ใช่ SetGB — พฤติกรรมเหมือนกันทั้งสองฟังก์ชัน)
+ *   's' : เบรกสั้น ๆ ทันที ไม่รอเงื่อนไข — G: ถอยสั้น ๆ (10→1) แล้วหยุด | GB: เดินหน้าสั้น ๆ (10→1) แล้วหยุด
+ *   'S' : วิ่งตรงด้วย gyro ต่อก่อนจนเซนเซอร์ F[1..6] (G: ToFrontG()) / B[1..6] (GB: ToBackG()) เจอเส้น แล้วเบรกแบบเดียวกับ 's'
+ *   'G' : วิ่งตรงด้วย gyro จนเจอเส้น (ToFrontG()/ToBackG()) แล้วล็อกมุมด้วย SetG(spd) (G) / SetG(100) (GB)
+ *   'g' และ 'a'/'A', 'd'/'D' : ⚠️ ไม่มี case รองรับในตระกูลนี้ ตกไปเงื่อนไข else เหมือนอักขระอื่น ๆ ที่ไม่รู้จัก → เรียก SetG(100) ทันที
+ *                                 (ไม่ใช่ SetFG แบบตระกูล (A) และแม้แต่ TrackSelectGB ก็เรียก SetG(100) ไม่ใช่ SetGB)
  */
 
 
@@ -257,6 +269,10 @@
 // spinl2_B(speed); spinr2_B(speed);
 // TurnLeft_B();    TurnRight_B();
 
+// เลี้ยวล้อเดียวแบบ "ถอยหลัง" (ตั้งค่าแยกด้วย TurnSpeed*BackF / TurnSpeed*BackB ใน Setting.ino)
+// TurnLeftBackF();   TurnRightBackF();    // เช็คเส้นด้วยเซนเซอร์หน้า F[] (เลือกเซนเซอร์ตามความเร็วล้อ) ตอนจบเบรก+lf() ปรับเข้าเส้น
+// TurnLeftBackB();   TurnRightBackB();    // เช็คเส้นด้วยเซนเซอร์หลัง B[] (เลือกเซนเซอร์ตามความเร็วล้อ)
+
 // เลี้ยวล้อเดียวแบบถอยหลัง เช็คเส้นด้วยเซนเซอร์หลัง B[] ใช้ TurnSpeedLeftBackB()/TurnSpeedRightBackB() ที่ตั้งไว้
 // TurnLeftBackB();  TurnRightBackB();
 
@@ -290,6 +306,14 @@
 // ⚙️ แบบกำหนดความเร็วเอง
 // spindegree(speed, Angle);   turndegree(speed, Angle);   turndegreeb(speed, Angle);
 // ตัวอย่าง: turndegree(50, 90);   // เลี้ยวขวา ความเร็ว 50
+
+// 🧭 หมุน/เลี้ยวไปยัง "ทิศสัมบูรณ์" (อ้างอิงมุม 0° ตอน resetAngles()/เปิดเครื่อง เช่น 0, 90, 180, 270, 360) ไปทางที่สั้นที่สุด
+// spindirection(direction);        spindirection(speed, direction);
+// turndirection(direction);        turndirection(speed, direction);      // เลี้ยวล้อเดียว (เดินหน้า)
+// turndirectionb(direction);       turndirectionb(speed, direction);     // เลี้ยวล้อเดียว (ถอยหลัง)
+// ตัวอย่าง: spindirection(90);   // หันไปทิศ 90° ไม่ว่าตอนนี้หันอยู่ทิศไหน (default speed = 30)
+// relativeToDirection(direction);  // คืนมุมสัมพัทธ์ที่ต้องหมุน (-180..180) ไปยังทิศนั้น
+// SetDirectionG(direction);        // ตั้งทิศเป้าหมายให้ RunG/RunGB วิ่งตรง (แทน current_degree) — ปกติเรียกผ่านรุ่นที่มี direction ด้านล่าง
 
 // ชื่อย่อ (ใช้แข่ง เขียนเร็ว) — ความหมายเหมือนกันทุกตัว มี/ไม่มี speed ได้ทั้งคู่
 // spinlg / spinrg      = spindegree ซ้าย/ขวา
@@ -337,6 +361,19 @@
 // ▶ วิ่งจนถึงระยะจากเซนเซอร์วัดระยะ
 // ffdg(speed, 'คำสั่งทางแยก', dist);          bbdg(speed, 'คำสั่งทางแยก', dist);
 // ffdgs(speed, 'คำสั่งทางแยก', dist);         bbdgs(speed, 'คำสั่งทางแยก', dist);
+
+// ▶ ล็อกทิศสัมบูรณ์ระหว่างวิ่ง: เติมพารามิเตอร์ direction (0, 90, 180, 270, 360) ต่อท้ายสุดของฟังก์ชัน *g ได้ทุกตัว
+// fftimerg(speed, time, direction);            bbtimerg(speed, time, direction);
+// fftimerg(speed, time, 'select', direction);  bbtimerg(speed, time, 'select', direction);   // fftg/bbtg ก็มีรุ่นนี้
+// ffcmg(speed, cm, direction);                 bbcmg(speed, cm, direction);
+// ffcmg(speed, cm, 'select', direction);       bbcmg(speed, cm, 'select', direction);
+// ffcmgs(speed, cm, direction);                bbcmgs(speed, cm, direction);
+// ffcmgs(speed, cm, 'select', direction);      bbcmgs(speed, cm, 'select', direction);
+// ffbg(speed, 'select', direction);            bbbg(speed, 'select', direction);
+// ตัวอย่าง: ffcmg(60, 50, 'p', 90);   // วิ่ง 50 ซม. โดยล็อกหน้าหุ่นไว้ทิศ 90°
+
+// ▶ วิ่งตรงด้วย gyro จนเจอเส้นตัดหน้า/หลัง (ใช้ภายใน 'S'/'G' ของ TrackSelectG/GB)
+// ToFrontG();   ToBackG();
 
 // ▶ เข้ากึ่งกลางทางแยกด้วย gyro
 // ToCenterLG();   ToCenterRG();   ToCenterLRG();   BackCenterG();

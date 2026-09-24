@@ -9,7 +9,7 @@ void Setting() {
 
   /******************** LINE SENSOR CONFIG ********************/
   RefLineValue(500);        // ค่า threshold เซนเซอร์หน้า-หลัง
-  RefCenterLineValue(400);  // ค่า threshold เซนเซอร์คู่กลาง
+  RefCenterLineValue(500);  // ค่า threshold เซนเซอร์คู่กลาง
   TrackLineColor(0);        // 0 = พื้นขาวเส้นดำ | 1 = พื้นดำเส้นขาว
   Dottedline(0);            // 0 = ไม่มีเส้นประ | 1 = มีเส้นประ
 
@@ -17,21 +17,23 @@ void Setting() {
   // set_line_center(0);        // เดินธรรมดา เข้ากลางหุ่น
   set_line_center(1);                        // เดินตามเส้น เข้ากลางหุ่น
   SetToCenterSpeed(20);                      // ความเร็วเข้ากลางหุ่น
+  set_brake_fc(20,30); // การเบรค ตอนเดินหน้า
+  set_brake_bc(10,30); // การเบรค ตอนถอยหลัง
 
   /******************** TURN & SPEED CONFIG ********************/
   SetTurnSpeed(50);  // ความเร็วเลี้ยวหุ่น (l L ) (r R)
 
-  TurnSpeedLeft(20, 70, 40);   // เลี้ยวซ้าย (q Q)
-  TurnSpeedRight(70, 20, 40);  // เลี้ยวขวา (e E)
+  TurnSpeedLeft(-20, 70, 40);   // เลี้ยวซ้าย (q Q)
+  TurnSpeedRight(70, -20, 40);  // เลี้ยวขวา (e E)
 
-  TurnBackSpeedLeft(15, 80, 60);   // เลี้ยวซ้าย (q Q)
-  TurnBackSpeedRight(80, 15, 60);  // เลี้ยวขวา (e E)
+  TurnBackSpeedLeft(-15, 80, 60);   // เลี้ยวซ้าย (q Q)
+  TurnBackSpeedRight(80, -15, 60);  // เลี้ยวขวา (e E)
 
-  TurnSpeedLeftBackF(15, 80, 60);   // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หน้า (TurnLeftBackF)
-  TurnSpeedRightBackF(80, 15, 60);  // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หน้า (TurnRightBackF)
+  TurnSpeedLeftBackF(-15, 80, 60);   // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หน้า (TurnLeftBackF)
+  TurnSpeedRightBackF(80, -15, 60);  // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หน้า (TurnRightBackF)
 
-  TurnSpeedLeftBackB(15, 80, 60);   // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หลัง (TurnLeftBackB)
-  TurnSpeedRightBackB(80, 15, 60);  // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หลัง (TurnRightBackB)
+  TurnSpeedLeftBackB(-15, 80, 60);   // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หลัง (TurnLeftBackB)
+  TurnSpeedRightBackB(80, -15, 60);  // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หลัง (TurnRightBackB)
 
   ModeSpdPID(0, 100, -5);  // โหมดควบคุมความเร็ว
   // SetRobotPID(0.014, 0.04);  // PID หลัก (ยังไม่ใช้)
