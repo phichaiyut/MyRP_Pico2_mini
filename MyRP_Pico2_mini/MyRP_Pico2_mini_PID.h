@@ -2419,35 +2419,35 @@ void ffcr(int Speed, char select) {
 void fftimercl(int Speed, int totalTime) {
   int temp = set_position;
   set_position = set_positionL;
-  fftimer_ramped(Speed, totalTime);
+  fftimer(Speed, totalTime);
   set_position = temp;
 }
 
 void fftimercr(int Speed, int totalTime) {
   int temp = set_position;
   set_position = set_positionR;
-  fftimer_ramped(Speed, totalTime);
+  fftimer(Speed, totalTime);
   set_position = temp;
 }
 
 void ffcmcl(int Speed, int distance) {
   int temp = set_position;
   set_position = set_positionL;
-  ffcm_ramped(Speed, distance);
+  ffcm(Speed, distance);
   set_position = temp;
 }
 
 void ffcmcr(int Speed, int distance) {
   int temp = set_position;
   set_position = set_positionR;
-  ffcm_ramped(Speed, distance);
+  ffcm(Speed, distance);
   set_position = temp;
 }
 
 void fftimercl(int Speed, int totalTime, char select) {
   int temp = set_position;
   set_position = set_positionL;
-  fftimer_ramped(Speed, totalTime);
+  fftimer(Speed, totalTime);
   TrackSelectF(Speed, select);
   set_position = temp;
 }
@@ -2455,7 +2455,7 @@ void fftimercl(int Speed, int totalTime, char select) {
 void fftimercr(int Speed, int totalTime, char select) {
   int temp = set_position;
   set_position = set_positionR;
-  fftimer_ramped(Speed, totalTime);
+  fftimer(Speed, totalTime);
   TrackSelectF(Speed, select);
   set_position = temp;
 }
@@ -2463,7 +2463,7 @@ void fftimercr(int Speed, int totalTime, char select) {
 void ffcmcl(int Speed, int distance, char select) {
   int temp = set_position;
   set_position = set_positionL;
-  ffcm_ramped(Speed, distance);
+  ffcm(Speed, distance);
   TrackSelectF(Speed, select);
   set_position = temp;
 }
@@ -2471,7 +2471,7 @@ void ffcmcl(int Speed, int distance, char select) {
 void ffcmcr(int Speed, int distance, char select) {
   int temp = set_position;
   set_position = set_positionR;
-  ffcm_ramped(Speed, distance);
+  ffcm(Speed, distance);
   TrackSelectF(Speed, select);
   set_position = temp;
 }
@@ -2507,35 +2507,35 @@ void bbcr(int Speed, char select) {
 void bbtimercl(int Speed, int totalTime) {
   int temp = set_position;
   set_position = set_positionL;
-  bbtimer_ramped(Speed, totalTime);
+  bbtimer(Speed, totalTime);
   set_position = temp;
 }
 
 void bbtimercr(int Speed, int totalTime) {
   int temp = set_position;
   set_position = set_positionR;
-  bbtimer_ramped(Speed, totalTime);
+  bbtimer(Speed, totalTime);
   set_position = temp;
 }
 
 void bbcmcl(int Speed, int distance) {
   int temp = set_position;
   set_position = set_positionL;
-  bbcm_ramped(Speed, distance);
+  bbcm(Speed, distance);
   set_position = temp;
 }
 
 void bbcmcr(int Speed, int distance) {
   int temp = set_position;
   set_position = set_positionR;
-  bbcm_ramped(Speed, distance);
+  bbcm(Speed, distance);
   set_position = temp;
 }
 
 void bbtimercl(int Speed, int totalTime, char select) {
   int temp = set_position;
   set_position = set_positionL;
-  bbtimer_ramped(Speed, totalTime);
+  bbtimer(Speed, totalTime);
   TrackSelectB(Speed, select);
   set_position = temp;
 }
@@ -2543,7 +2543,7 @@ void bbtimercl(int Speed, int totalTime, char select) {
 void bbtimercr(int Speed, int totalTime, char select) {
   int temp = set_position;
   set_position = set_positionR;
-  bbtimer_ramped(Speed, totalTime);
+  bbtimer(Speed, totalTime);
   TrackSelectB(Speed, select);
   set_position = temp;
 }
@@ -2551,7 +2551,7 @@ void bbtimercr(int Speed, int totalTime, char select) {
 void bbcmcl(int Speed, int distance, char select) {
   int temp = set_position;
   set_position = set_positionL;
-  bbcm_ramped(Speed, distance);
+  bbcm(Speed, distance);
   TrackSelectB(Speed, select);
   set_position = temp;
 }
@@ -2559,7 +2559,7 @@ void bbcmcl(int Speed, int distance, char select) {
 void bbcmcr(int Speed, int distance, char select) {
   int temp = set_position;
   set_position = set_positionR;
-  bbcm_ramped(Speed, distance);
+  bbcm(Speed, distance);
   TrackSelectB(Speed, select);
   set_position = temp;
 }
