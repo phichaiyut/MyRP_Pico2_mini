@@ -375,12 +375,92 @@ void turndegreeb_none(int relative_degree) {
   turndegreeb_none(50, relative_degree);
 }
 
+void turndirection_none(int Speed, int direction) {
+  turndegree_none(Speed, relativeToDirection(direction));
+}
+
+void turndirectionb_none(int Speed, int direction) {
+  turndegreeb_none(Speed, relativeToDirection(direction));
+}
+
+void turndirection_none(int direction) {
+  turndirection_none(30, direction);
+}
+
+void turndirectionb_none(int direction) {
+  turndirectionb_none(30, direction);
+}
+
 /* ---------- gyro-guided straight move ---------- */
 
 float kpG = 2.5;
 float kdG = 1.5;
 float kpGB = 2.5;
 float kdGB = 1.5;
+
+// โหมดจำกัดกำลังมอเตอร์ของ RunG (เดินหน้า) / RunGB (ถอยหลัง) แยกจาก ModePidStatus ของ PID เส้น
+// ค่าเริ่มต้น = โหมด 4 (0..Speed) ทั้งคู่ ปรับได้ด้วย ModeSpdGyro() ใน Setting.ino
+int MaxSpeedG = 100;
+int MinSpeedG = -5;
+int ModeGyroStatus = 4;
+int ModeGyroBStatus = 4;
+
+// ตั้งโหมดจำกัดกำลังของ gyro (ใช้ทั้ง RunG และ RunGB) แบบเดียวกับ ModeSpdPID()
+void ModeSpdGyro(int moD, int maX, int miN) {
+  ModeGyroStatus = moD;
+  ModeGyroBStatus = moD;
+  MaxSpeedG = maX;
+  MinSpeedG = miN;
+}
+
+// ตั้งโหมดแยกเดินหน้า (RunG) / ถอยหลัง (RunGB)
+void ModeSpdGyro(int moDF, int moDB, int maX, int miN) {
+  ModeGyroStatus = moDF;
+  ModeGyroBStatus = moDB;
+  MaxSpeedG = maX;
+  MinSpeedG = miN;
+}
+
+// จำกัดค่า LeftPower/RightPower ของ gyro ตามโหมด (เคส 0-3 เหมือน ClampPIDPower, เคส 4 = 0..Speed)
+void ClampGyroPower(float &LeftPower, float &RightPower, int SpeedL, int SpeedR, int mode) {
+  switch (mode) {
+  case 0:
+    if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
+    if (LeftPower < 0) LeftPower = MinSpeedG;
+    if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
+    if (RightPower < 0) RightPower = MinSpeedG;
+    break;
+  case 1:
+    if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
+    if (LeftPower < MinSpeedG) LeftPower = MinSpeedG;
+    if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
+    if (RightPower < MinSpeedG) RightPower = MinSpeedG;
+    break;
+  case 2:
+    if (LeftPower > SpeedL) LeftPower = SpeedL;
+    if (LeftPower < -SpeedL) LeftPower = -SpeedL;
+    if (RightPower > SpeedR) RightPower = SpeedR;
+    if (RightPower < -SpeedR) RightPower = -SpeedR;
+    break;
+  case 3:
+    if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
+    if (LeftPower < 0) LeftPower = -BaseSpeed;
+    if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
+    if (RightPower < 0) RightPower = -BaseSpeed;
+    break;
+  case 4:
+    if (LeftPower > SpeedL) LeftPower = SpeedL;
+    if (LeftPower < 0) LeftPower = 0;
+    if (RightPower > SpeedR) RightPower = SpeedR;
+    if (RightPower < 0) RightPower = 0;
+    break;
+  default:
+    if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
+    if (LeftPower < 0) LeftPower = 0;
+    if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
+    if (RightPower < 0) RightPower = 0;
+  }
+}
 
 void RunG(int SpeedL, int SpeedR) {
   float error = current_degree - gyroZ();
@@ -390,15 +470,10 @@ void RunG(int SpeedL, int SpeedR) {
 
   float derivative = error - previous_errorG;
   int pd_value = (int)((error * kpG) + (derivative * kdG));
-  int leftPow = SpeedL + pd_value;
-  int rightPow = SpeedR - pd_value;
+  float leftPow = SpeedL + pd_value;
+  float rightPow = SpeedR - pd_value;
 
-  if (leftPow > SpeedL) leftPow = SpeedL;
-  // if (leftPow < 0) leftPow = 0;
-  if (leftPow < -SpeedL) leftPow = -SpeedL;
-  if (rightPow > SpeedR) rightPow = SpeedR;
-  // if (rightPow < 0) rightPow = 0;
-  if (rightPow < -SpeedR) rightPow = -SpeedR;
+  ClampGyroPower(leftPow, rightPow, SpeedL, SpeedR, ModeGyroStatus);
 
   Motor(leftPow, rightPow);
   previous_errorG = error;
@@ -410,15 +485,10 @@ void RunGB(int SpeedL, int SpeedR) {
   else if (error < -180.0f) error += 360.0f;
   float derivative = error - previous_errorGB;
   int pd_value = (int)((error * kpGB) + (derivative * kdGB));
-  int leftPow = SpeedL - pd_value;
-  int rightPow = SpeedR + pd_value;
+  float leftPow = SpeedL - pd_value;
+  float rightPow = SpeedR + pd_value;
 
-  if (leftPow > SpeedL) leftPow = SpeedL;
-   // if (leftPow < 0) leftPow = 0;
-  if (leftPow < -SpeedL) leftPow = -SpeedL;
-  if (rightPow > SpeedR) rightPow = SpeedR;
-   // if (leftPow < 0) leftPow = 0;
-  if (rightPow < -SpeedR) rightPow = -SpeedR;
+  ClampGyroPower(leftPow, rightPow, SpeedL, SpeedR, ModeGyroBStatus);
 
   Motor(-leftPow, -rightPow);
   previous_errorGB = error;
