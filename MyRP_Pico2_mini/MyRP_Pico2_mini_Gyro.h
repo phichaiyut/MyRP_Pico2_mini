@@ -8,6 +8,39 @@ float current_degree = 0;
 float previous_errorG = 0;
 float previous_errorGB = 0;
 
+// ===== ตัวแปรปรับค่าไจโร (ปรับได้ด้วย SetGyroTurn / SetGyroSpin ใน Setting.ino) =====
+float gyro_Kp_Spin         = 0.9f;
+float gyro_Kd_Spin         = 0.6f;
+int   gyro_MaxSpd_Spin     = 30;
+int   gyro_MinSpd_Spin     = 10;
+float gyro_SmallAngle_Spin = 10.0f;
+float gyro_StopThr_Spin    = 1.0f;
+float gyro_Kp_Turn         = 1.2f;
+float gyro_Kd_Turn         = 0.6f;
+int   gyro_MaxSpd_Turn     = 30;
+int   gyro_MinSpd_Turn     = 10;
+float gyro_SmallAngle_Turn = 20.0f;
+float gyro_StopThr_Turn    = 1.0f;
+float gyro_StopThr_Rotate  = 1.0f;
+
+void SetGyroTurn(float kp, float kd, int maxSpd, int minSpd, float smallAngle, float stopThr) {
+  gyro_Kp_Turn         = kp;
+  gyro_Kd_Turn         = kd;
+  gyro_MaxSpd_Turn     = maxSpd;
+  gyro_MinSpd_Turn     = minSpd;
+  gyro_SmallAngle_Turn = smallAngle;
+  gyro_StopThr_Turn    = stopThr;
+}
+
+void SetGyroSpin(float kp, float kd, int maxSpd, int minSpd, float smallAngle, float stopThr) {
+  gyro_Kp_Spin         = kp;
+  gyro_Kd_Spin         = kd;
+  gyro_MaxSpd_Spin     = maxSpd;
+  gyro_MinSpd_Spin     = minSpd;
+  gyro_SmallAngle_Spin = smallAngle;
+  gyro_StopThr_Spin    = stopThr;
+}
+
 /* ---------- sensor setup ---------- */
 
 void resetAngles() {
@@ -110,12 +143,12 @@ void SetGB(int totalTime) {
 /* ---------- spin / turn ---------- */
 
 void spindegree(int Speed, int relative_degree) {
-  int min_speed = 10;
+  int min_speed = gyro_MinSpd_Spin;
   int max_speed = Speed;
-  float kp = 0.9;
-  float kd = 0.6; // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = 10; // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
-  float stop_threshold = 1.0;
+  float kp = gyro_Kp_Spin;
+  float kd = gyro_Kd_Spin; // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
+  float small_angle_threshold = gyro_SmallAngle_Spin; // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
+  float stop_threshold = gyro_StopThr_Spin;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
 
@@ -149,12 +182,12 @@ void spindegree(int Speed, int relative_degree) {
 }
 
 void turndegree(int Speed, int relative_degree) {
-  int min_speed = 10; // เพิ่มจาก 10: ล้อเดียวแรงไม่พอหมุนถึงเป้าหมายบางครั้ง
+  int min_speed = gyro_MinSpd_Turn; // เพิ่มจาก 10: ล้อเดียวแรงไม่พอหมุนถึงเป้าหมายบางครั้ง
   int max_speed = Speed;
-  float kp = 1.2; // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
-  float kd = 0.6; // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = 20; // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
-  float stop_threshold = 1.0;
+  float kp = gyro_Kp_Turn; // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
+  float kd = gyro_Kd_Turn; // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
+  float small_angle_threshold = gyro_SmallAngle_Turn; // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
+  float stop_threshold = gyro_StopThr_Turn;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
 
@@ -192,12 +225,12 @@ void turndegree(int Speed, int relative_degree) {
 }
 
 void turndegreeb(int Speed, int relative_degree) {
-  int min_speed = 10; // เพิ่มจาก 10: ล้อเดียวแรงไม่พอหมุนถึงเป้าหมายบางครั้ง
+  int min_speed = gyro_MinSpd_Turn; // เพิ่มจาก 10: ล้อเดียวแรงไม่พอหมุนถึงเป้าหมายบางครั้ง
   int max_speed = Speed;
-  float kp = 1.2; // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
-  float kd = 0.6; // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = 20; // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
-  float stop_threshold = 1.0;
+  float kp = gyro_Kp_Turn; // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
+  float kd = gyro_Kd_Turn; // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
+  float small_angle_threshold = gyro_SmallAngle_Turn; // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
+  float stop_threshold = gyro_StopThr_Turn;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
 
@@ -237,7 +270,7 @@ void turndegreeb(int Speed, int relative_degree) {
 /* ---------- rotate degree (arc: independent left/right cruise speed) ---------- */
 
 void rotatedegree(int SpeedL, int SpeedR, int relative_degree, float kp, float kd) {
-  float stop_threshold = 1.0;
+  float stop_threshold = gyro_StopThr_Rotate;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
 
@@ -322,7 +355,7 @@ void turndegreeb_none(int Speed, int relative_degree) {
 }
 
 void spindegree(int relative_degree) {
-  spindegree(30, relative_degree);
+  spindegree(gyro_MaxSpd_Spin, relative_degree);
 }
 
 /* ---------- turn to absolute direction (อ้างอิงจากตอน resetAngles) เช่น 0, 90, 180, 270, 360 ---------- */
@@ -340,7 +373,7 @@ void spindirection(int Speed, int direction) {
 }
 
 void spindirection(int direction) {
-  spindirection(30, direction);
+  spindirection(gyro_MaxSpd_Spin, direction);
 }
 
 void turndirection(int Speed, int direction) {
@@ -352,19 +385,19 @@ void turndirectionb(int Speed, int direction) {
 }
 
 void turndirection(int direction) {
-  turndirection(30, direction);
+  turndirection(gyro_MaxSpd_Turn, direction);
 }
 
 void turndirectionb(int direction) {
-  turndirectionb(30, direction);
+  turndirectionb(gyro_MaxSpd_Turn, direction);
 }
 
 void turndegree(int relative_degree) {
-  turndegree(30, relative_degree);
+  turndegree(gyro_MaxSpd_Turn, relative_degree);
 }
 
 void turndegreeb(int relative_degree) {
-  turndegreeb(30, relative_degree);
+  turndegreeb(gyro_MaxSpd_Turn, relative_degree);
 }
 
 void turndegree_none(int relative_degree) {
@@ -397,6 +430,16 @@ float kpG = 2.5;
 float kdG = 1.5;
 float kpGB = 2.5;
 float kdGB = 1.5;
+
+void SetGyroRun(float kp, float kd) {
+  kpG = kp;
+  kdG = kd;
+}
+
+void SetGyroRunB(float kp, float kd) {
+  kpGB = kp;
+  kdGB = kd;
+}
 
 // โหมดจำกัดกำลังมอเตอร์ของ RunG (เดินหน้า) / RunGB (ถอยหลัง) แยกจาก ModePidStatus ของ PID เส้น
 // ค่าเริ่มต้น = โหมด 4 (0..Speed) ทั้งคู่ ปรับได้ด้วย ModeSpdGyro() ใน Setting.ino
