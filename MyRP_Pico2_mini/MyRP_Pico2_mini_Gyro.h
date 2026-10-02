@@ -45,6 +45,9 @@ void SetGyroSpin(float kp, float kd, int maxSpd, int minSpd, float smallAngle, f
 
 void resetAngles() {
   my.resetAngles();
+  current_degree = 0;
+  previous_errorG = 0;
+  previous_errorGB = 0;
 }
 
 float gyroZ() {
