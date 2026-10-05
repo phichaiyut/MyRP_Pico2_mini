@@ -83,6 +83,25 @@ void RobotSetupSpeed() {
   SetBalanceSpeedBackward();  // ตั้งค่าความสมดุลมอเตอร์ถอยหลัง
   SetKpKd();                  // ตั้งค่า KP/KD เดินหน้า
   SetKpKdBack();              // ตั้งค่า KP/KD ถอยหลัง
+  SetDelayBreakSpeed();       // ตั้งค่าเวลาเบรกตามความเร็ว
+}
+
+// ==================== เวลาเบรก (ms) ตามความเร็ว ====================
+
+void SetDelayBreakSpeed() {
+  // หุ่นไถลเลยเส้น ให้เพิ่มค่า | หุ่นถอยกลับเลยเส้น ให้ลดค่า
+  // SetDelayBreak(SPEED, เดินหน้า, ถอยหลัง);
+
+  SetDelayBreak(SPD_10,  30, 30);  // ความเร็ว 10
+  SetDelayBreak(SPD_20,  30, 30);  // ความเร็ว 20
+  SetDelayBreak(SPD_30,  30, 30);  // ความเร็ว 30
+  SetDelayBreak(SPD_40,  30, 30);  // ความเร็ว 40
+  SetDelayBreak(SPD_50,  30, 30);  // ความเร็ว 50
+  SetDelayBreak(SPD_60,  30, 30);  // ความเร็ว 60
+  SetDelayBreak(SPD_70,  30, 30);  // ความเร็ว 70
+  SetDelayBreak(SPD_80,  30, 30);  // ความเร็ว 80
+  SetDelayBreak(SPD_90,  30, 30);  // ความเร็ว 90
+  SetDelayBreak(SPD_100, 30, 30);  // ความเร็ว 100
 }
 
 // ==================== PID เดินหน้า ====================
