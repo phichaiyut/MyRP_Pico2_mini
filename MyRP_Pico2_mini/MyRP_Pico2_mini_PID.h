@@ -1272,16 +1272,16 @@ void TrackSelectF(int spd, char x) {
       break;
 
     case 'g':
-      SetFG(100);
+      SetFG(spd);
       break;
 
     case 'G':
       ToFront();
-      SetFG(100);
+      SetFG(spd);
       break;
 
     default:
-      MotorStop(20);
+      MotorStop(spd);
       break;
   }
 }
