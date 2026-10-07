@@ -4,11 +4,11 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#define MCP3008s_SPI_MAX_5V 3600000         ///< SPI MAX Value on 5V pin
-#define MCP3008s_SPI_MAX_3V 1350000         ///< SPI MAX Value on 3V pin
-#define MCP3008s_SPI_MAX MCP3008s_SPI_MAX_3V ///< SPI MAX Value
-#define MCP3008s_SPI_ORDER MSBFIRST         ///<  SPI ORDER
-#define MCP3008s_SPI_MODE SPI_MODE0         ///< SPI MODE
+#define MCP3008s_SPI_MAX_5V 3600000           ///< SPI MAX Value on 5V pin
+#define MCP3008s_SPI_MAX_3V 1350000           ///< SPI MAX Value on 3V pin
+#define MCP3008s_SPI_MAX MCP3008s_SPI_MAX_3V  ///< SPI MAX Value
+#define MCP3008s_SPI_ORDER MSBFIRST           ///<  SPI ORDER
+#define MCP3008s_SPI_MODE SPI_MODE0           ///< SPI MODE
 
 class my_MCP3008s {
 public:
@@ -28,4 +28,4 @@ private:
   SPIClass* _spi;
 };
 
-#endif // my_MCP3008s_h
+#endif  // my_MCP3008s_h

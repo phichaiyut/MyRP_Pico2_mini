@@ -17,8 +17,14 @@ bool DC_Motors = true;
 
 BatteryMonitor bat;
 
-inline void updateBattery() { bat.update(); }
-inline float getBatteryVoltage() { return bat.getVoltage(); }
+/* ---------- battery compensation ---------- */
+
+inline void updateBattery() {
+  bat.update();
+}
+inline float getBatteryVoltage() {
+  return bat.getVoltage();
+}
 
 float scale = 1.0f;
 
@@ -47,6 +53,8 @@ void bat_control() {
   scale = constrain(scale, 0.95f, 1.05f);
 }
 
+/* ---------- motor driver ---------- */
+
 void Motor(int left, int right) {
   updateBattery();
   static unsigned long lastBatUpdate = 0;
@@ -59,7 +67,7 @@ void Motor(int left, int right) {
   int pwmL = map(abs(left), 0, 100, 0, 4095);
   int pwmR = map(abs(right), 0, 100, 0, 4095);
 
-  pwmL = constrain((int)(pwmL * scale), 0, 3850);   // Safety limit
+  pwmL = constrain((int)(pwmL * scale), 0, 3850);  // Safety limit
   pwmR = constrain((int)(pwmR * scale), 0, 3850);
 
   // LEFT MOTOR
@@ -140,9 +148,10 @@ int L[10], R[10];
 int BL[10], BR[10];
 float KP[10], KD[10];
 float KP_Back[10], KD_Back[10];
-int delay_break_f_table[10] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
-int delay_break_b_table[10] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
+int delay_break_f_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
+int delay_break_b_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
 
+/* ---------- speed/PID tables ---------- */
 
 // ดัชนีตารางความเร็ว (ใช้กับ setBalanceSpeed/Set_KP_KD ฯลฯ)
 #define SPD_10 0
@@ -191,13 +200,15 @@ void InitialSpeed() {
   RightBaseSpeed = BaseSpeed - R[idx];
   BackLeftBaseSpeed = BaseSpeed - BL[idx];
   BackRightBaseSpeed = BaseSpeed - BR[idx];
-  PID_KP_Front = KP[idx];       // forward PID
+  PID_KP_Front = KP[idx];  // forward PID
   PID_KD_Front = KD[idx];
-  PID_KP_Back = KP_Back[idx];   // backward PID
+  PID_KP_Back = KP_Back[idx];  // backward PID
   PID_KD_Back = KD_Back[idx];
   delay_break_f = delay_break_f_table[idx];
   delay_break_b = delay_break_b_table[idx];
 }
+
+/* ---------- preset moves ---------- */
 
 void fd(int Speed, int time_ms) {
   BaseSpeed = Speed;
@@ -235,4 +246,4 @@ void tr(int Speed, int time_ms) {
   MotorStop(0);
 }
 
-#endif // MYRP_PICO2_MINI_MOTOR_H
+#endif  // MYRP_PICO2_MINI_MOTOR_H

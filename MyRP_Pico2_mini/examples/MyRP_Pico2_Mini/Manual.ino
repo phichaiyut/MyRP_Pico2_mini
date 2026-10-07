@@ -43,6 +43,8 @@
 // SetTurnSpeed(speed);              // ความเร็ว default ของ spinl()/spinr() (เมื่อไม่ระบุ speed เอง)
 // TurnSpeedLeft(l, r, delay);       // ความเร็วล้อซ้าย/ขวา + เวลาหน่วง ตอน TurnLeft() (เลี้ยว q/Q)
 // TurnSpeedRight(l, r, delay);      // เหมือนกันแต่ TurnRight() (เลี้ยว e/E)
+// SetSensorTurnLeftRight(l, r);     // เซนเซอร์หน้าที่หยุดเลี้ยว TurnLeft (กวาด F[0..l]) / TurnRight (กวาด F[7..r])
+// SetSensorTurnLeftRight_B(l, r);   // เซนเซอร์หลังที่หยุดเลี้ยว TurnLeft_B (กวาด B[7..l]) / TurnRight_B (กวาด B[0..r])
 // TurnBackSpeedLeft(l, r, delay);   // เหมือน TurnSpeedLeft แต่ใช้ตอนถอยหลัง (TurnLeft_B)
 // TurnBackSpeedRight(l, r, delay);  // เหมือน TurnSpeedRight แต่ใช้ตอนถอยหลัง (TurnRight_B)
 // TurnSpeedLeftBackF(l, r, delay);  TurnSpeedRightBackF(l, r, delay);   // ตั้งค่าให้ TurnLeftBackF()/TurnRightBackF() (ถอยเลี้ยวล้อเดียว เช็คเซนเซอร์หน้า F[])
@@ -364,6 +366,7 @@
 // ffdgs(speed, 'คำสั่งทางแยก', dist);         bbdgs(speed, 'คำสั่งทางแยก', dist);
 
 // ▶ ล็อกทิศสัมบูรณ์ระหว่างวิ่ง: เติมพารามิเตอร์ direction (0, 90, 180, 270, 360) ต่อท้ายสุดของฟังก์ชัน *g ได้ทุกตัว
+// ▶ ถอยหลัง (bb*g): direction = ทิศที่หุ่น "เคลื่อนที่ไป" เช่น bbcmg(speed, cm, 'p', 180) = ถอยไปทิศ 180 (หน้าหันทิศ 0)
 // fftimerg(speed, time, direction);            bbtimerg(speed, time, direction);
 // fftimerg(speed, time, 'select', direction);  bbtimerg(speed, time, 'select', direction);   // fftg/bbtg ก็มีรุ่นนี้
 // ffcmg(speed, cm, direction);                 bbcmg(speed, cm, direction);
@@ -499,7 +502,6 @@
 // ตั้งค่า PID/ทางแยกอื่น ๆ (Setting.ino)
 // set_position_line(pos);   set_position_line_l(pos);   set_position_line_r(pos);
 // set_line_center(0/1);      SetToCenterSpeed(speed);
-// set_slow_kp_kd(kpf, kdf, kpb, kdb);
 // SetTurnSpeed(spd);          TurnSpeedLeft(l, r, delay);   TurnSpeedRight(l, r, delay);
 // ModeSpdPID(mode, max, min);
 // SetPIDDeadBand(db);         // ค่า error ต่ำกว่านี้มองเป็น 0 กันสั่น (ค่าเริ่มต้น 20)

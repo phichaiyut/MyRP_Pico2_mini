@@ -45,7 +45,7 @@ void SetGyroSpin(float kp, float kd, int maxSpd, int minSpd, float smallAngle, f
 
 void resetAngles() {
   my.resetAngles();
-  current_degree = 0;
+  current_degree = my.gyro('z');
   previous_errorG = 0;
   previous_errorGB = 0;
 }
@@ -76,8 +76,8 @@ void HoldAngle() {
   else if (error < -180) error += 360;
   float d = error - prevErrHold;
   int power = (error * kpHold) + (d * kdHold);
-  power = constrain(power, -50, 50); // แรงหมุน
-  Motor(power, -power); // หมุนอยู่กับที่
+  power = constrain(power, -50, 50);  // แรงหมุน
+  Motor(power, -power);               // หมุนอยู่กับที่
   prevErrHold = error;
 }
 
@@ -88,13 +88,13 @@ void HoldAngleB() {
   else if (error < -180) error += 360;
   float d = error - prevErrHoldB;
   int power = (error * kpBHold) + (d * kdBHold);
-  power = constrain(power, -50, 50); // แรงหมุน
-  Motor(-power, power); // หมุนอยู่กับที่
+  power = constrain(power, -50, 50);  // แรงหมุน
+  Motor(-power, power);               // หมุนอยู่กับที่
   prevErrHoldB = error;
 }
 
 void SetHoldAngle() {
-  holdAngle = gyroZ(); // มุมที่ต้องการให้หุ่น "จำ"
+  holdAngle = gyroZ();  // มุมที่ต้องการให้หุ่น "จำ"
   MotorStop();
   prevErrHoldF = 0;
 }
@@ -106,8 +106,8 @@ void HoldAngleF() {
   else if (error < -180) error += 360;
   float d = error - prevErrHoldF;
   int power = (error * kpFHold) + (d * kdFHold);
-  power = constrain(power, -50, 50); // แรงหมุน
-  Motor(power, -power); // หมุนอยู่กับที่
+  power = constrain(power, -50, 50);  // แรงหมุน
+  Motor(power, -power);               // หมุนอยู่กับที่
   prevErrHoldF = error;
 }
 
@@ -179,17 +179,17 @@ void spindegree(int Speed, int relative_degree) {
     } else {
       Motor(pd_value, -pd_value);
     }
-
+    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
     previous_error = error;
   }
 }
 
 void turndegree(int Speed, int relative_degree) {
-  int min_speed = gyro_MinSpd_Turn; // เพิ่มจาก 10: ล้อเดียวแรงไม่พอหมุนถึงเป้าหมายบางครั้ง
+  int min_speed = gyro_MinSpd_Turn;  // เพิ่มจาก 10: ล้อเดียวแรงไม่พอหมุนถึงเป้าหมายบางครั้ง
   int max_speed = Speed;
-  float kp = gyro_Kp_Turn; // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
-  float kd = gyro_Kd_Turn; // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = gyro_SmallAngle_Turn; // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
+  float kp = gyro_Kp_Turn;                             // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
+  float kd = gyro_Kd_Turn;                             // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
+  float small_angle_threshold = gyro_SmallAngle_Turn;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = gyro_StopThr_Turn;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
@@ -228,11 +228,11 @@ void turndegree(int Speed, int relative_degree) {
 }
 
 void turndegreeb(int Speed, int relative_degree) {
-  int min_speed = gyro_MinSpd_Turn; // เพิ่มจาก 10: ล้อเดียวแรงไม่พอหมุนถึงเป้าหมายบางครั้ง
+  int min_speed = gyro_MinSpd_Turn;  // เพิ่มจาก 10: ล้อเดียวแรงไม่พอหมุนถึงเป้าหมายบางครั้ง
   int max_speed = Speed;
-  float kp = gyro_Kp_Turn; // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
-  float kd = gyro_Kd_Turn; // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = gyro_SmallAngle_Turn; // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
+  float kp = gyro_Kp_Turn;                             // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
+  float kd = gyro_Kd_Turn;                             // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
+  float small_angle_threshold = gyro_SmallAngle_Turn;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = gyro_StopThr_Turn;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
@@ -264,7 +264,7 @@ void turndegreeb(int Speed, int relative_degree) {
       if (error <= 0) Motor(pd_value, 1);
       else Motor(-1, -pd_value);
     }
-
+    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
     previous_error = error;
   }
   SetG(5);
@@ -301,6 +301,7 @@ void rotatedegree(int SpeedL, int SpeedR, int relative_degree, float kp, float k
 
     Motor(leftPow, rightPow);
     previous_error = error;
+    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
   }
   SetG(5);
 }
@@ -330,6 +331,7 @@ void turndegree_none(int Speed, int relative_degree) {
     } else {
       Motor(-1, Speed);
     }
+    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
   }
 }
 
@@ -354,6 +356,7 @@ void turndegreeb_none(int Speed, int relative_degree) {
     } else {
       Motor(-Speed, 1);
     }
+    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
   }
 }
 
@@ -470,41 +473,41 @@ void ModeSpdGyro(int moDF, int moDB, int maX, int miN) {
 // จำกัดค่า LeftPower/RightPower ของ gyro ตามโหมด (เคส 0-3 เหมือน ClampPIDPower, เคส 4 = 0..Speed)
 void ClampGyroPower(float &LeftPower, float &RightPower, int SpeedL, int SpeedR, int mode) {
   switch (mode) {
-  case 0:
-    if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
-    if (LeftPower < 0) LeftPower = MinSpeedG;
-    if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
-    if (RightPower < 0) RightPower = MinSpeedG;
-    break;
-  case 1:
-    if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
-    if (LeftPower < MinSpeedG) LeftPower = MinSpeedG;
-    if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
-    if (RightPower < MinSpeedG) RightPower = MinSpeedG;
-    break;
-  case 2:
-    if (LeftPower > SpeedL) LeftPower = SpeedL;
-    if (LeftPower < -SpeedL) LeftPower = -SpeedL;
-    if (RightPower > SpeedR) RightPower = SpeedR;
-    if (RightPower < -SpeedR) RightPower = -SpeedR;
-    break;
-  case 3:
-    if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
-    if (LeftPower < 0) LeftPower = -BaseSpeed;
-    if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
-    if (RightPower < 0) RightPower = -BaseSpeed;
-    break;
-  case 4:
-    if (LeftPower > SpeedL) LeftPower = SpeedL;
-    if (LeftPower < 0) LeftPower = 0;
-    if (RightPower > SpeedR) RightPower = SpeedR;
-    if (RightPower < 0) RightPower = 0;
-    break;
-  default:
-    if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
-    if (LeftPower < 0) LeftPower = 0;
-    if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
-    if (RightPower < 0) RightPower = 0;
+    case 0:
+      if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
+      if (LeftPower < 0) LeftPower = MinSpeedG;
+      if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
+      if (RightPower < 0) RightPower = MinSpeedG;
+      break;
+    case 1:
+      if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
+      if (LeftPower < MinSpeedG) LeftPower = MinSpeedG;
+      if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
+      if (RightPower < MinSpeedG) RightPower = MinSpeedG;
+      break;
+    case 2:
+      if (LeftPower > SpeedL) LeftPower = SpeedL;
+      if (LeftPower < -SpeedL) LeftPower = -SpeedL;
+      if (RightPower > SpeedR) RightPower = SpeedR;
+      if (RightPower < -SpeedR) RightPower = -SpeedR;
+      break;
+    case 3:
+      if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
+      if (LeftPower < 0) LeftPower = -BaseSpeed;
+      if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
+      if (RightPower < 0) RightPower = -BaseSpeed;
+      break;
+    case 4:
+      if (LeftPower > SpeedL) LeftPower = SpeedL;
+      if (LeftPower < 0) LeftPower = 0;
+      if (RightPower > SpeedR) RightPower = SpeedR;
+      if (RightPower < 0) RightPower = 0;
+      break;
+    default:
+      if (LeftPower > MaxSpeedG) LeftPower = MaxSpeedG;
+      if (LeftPower < 0) LeftPower = 0;
+      if (RightPower > MaxSpeedG) RightPower = MaxSpeedG;
+      if (RightPower < 0) RightPower = 0;
   }
 }
 
@@ -523,6 +526,7 @@ void RunG(int SpeedL, int SpeedR) {
 
   Motor(leftPow, rightPow);
   previous_errorG = error;
+  delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นวิ่งช้าลงและลดการสั่น
 }
 
 void RunGB(int SpeedL, int SpeedR) {
@@ -538,6 +542,7 @@ void RunGB(int SpeedL, int SpeedR) {
 
   Motor(-leftPow, -rightPow);
   previous_errorGB = error;
+  delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นวิ่งช้าลงและลดการสั่น
 }
 
 void fftimerg(int Speed, int totalTime) {
@@ -560,6 +565,12 @@ void SetDirectionG(int direction) {
   else if (error < -180.0f) error += 360.0f;
   previous_errorG = error;
   previous_errorGB = error;
+}
+
+// ทิศสำหรับถอยหลัง: direction = ทิศที่หุ่น "เคลื่อนที่ไป" (อ้างอิงเดียวกับเดินหน้า)
+// เช่น bbcmg(spd, cm, 180) = ถอยไปทางทิศ 180 โดยหน้าหุ่นหันทิศ 0
+void SetDirectionGB(int direction) {
+  SetDirectionG(direction + 180);
 }
 
 void bbtimerg(int Speed, int totalTime) {
@@ -599,7 +610,7 @@ void ffcmgs(int Speed, float distance) {
 
       if (traveled_distance >= distance) break;
     }
-    delayMicroseconds(80);
+    //delayMicroseconds(80);
   }
 }
 
@@ -728,84 +739,186 @@ void bbcmg(int Speed, float distance_cm) {
 
 /* ---------- gyro straight with absolute direction ---------- */
 
-void fftimerg(int Speed, int totalTime, int direction) { SetDirectionG(direction); fftimerg(Speed, totalTime); }
-void bbtimerg(int Speed, int totalTime, int direction) { SetDirectionG(direction); bbtimerg(Speed, totalTime); }
+void fftimerg(int Speed, int totalTime, int direction) {
+  SetDirectionG(direction);
+  fftimerg(Speed, totalTime);
+}
+void bbtimerg(int Speed, int totalTime, int direction) {
+  SetDirectionGB(direction);
+  bbtimerg(Speed, totalTime);
+}
 
-void ffcmgs(int Speed, float distance_cm, int direction) { SetDirectionG(direction); ffcmgs(Speed, distance_cm); }
-void bbcmgs(int Speed, float distance_cm, int direction) { SetDirectionG(direction); bbcmgs(Speed, distance_cm); }
+void ffcmgs(int Speed, float distance_cm, int direction) {
+  SetDirectionG(direction);
+  ffcmgs(Speed, distance_cm);
+}
+void bbcmgs(int Speed, float distance_cm, int direction) {
+  SetDirectionGB(direction);
+  bbcmgs(Speed, distance_cm);
+}
 
-void ffcmg(int Speed, float distance_cm, int direction) { SetDirectionG(direction); ffcmg(Speed, distance_cm); }
-void bbcmg(int Speed, float distance_cm, int direction) { SetDirectionG(direction); bbcmg(Speed, distance_cm); }
+void ffcmg(int Speed, float distance_cm, int direction) {
+  SetDirectionG(direction);
+  ffcmg(Speed, distance_cm);
+}
+void bbcmg(int Speed, float distance_cm, int direction) {
+  SetDirectionGB(direction);
+  bbcmg(Speed, distance_cm);
+}
 
 /* ---------- spin / turn helpers ---------- */
 
-void spinlg(int Angle) { spindegree(-abs(Angle)); }
+void spinlg(int Angle) {
+  spindegree(-abs(Angle));
+}
 
-void spinrg(int Angle) { spindegree(abs(Angle)); }
+void spinrg(int Angle) {
+  spindegree(abs(Angle));
+}
 
-void turnlg(int Angle) { turndegree(-abs(Angle)); }
+void turnlg(int Angle) {
+  turndegree(-abs(Angle));
+}
 
-void turnrg(int Angle) { turndegree(abs(Angle)); }
+void turnrg(int Angle) {
+  turndegree(abs(Angle));
+}
 
-void turnlbg(int Angle) { turndegreeb(abs(Angle)); }
+void turnlbg(int Angle) {
+  turndegreeb(abs(Angle));
+}
 
-void turnrbg(int Angle) { turndegreeb(-abs(Angle)); }
+void turnrbg(int Angle) {
+  turndegreeb(-abs(Angle));
+}
 
-void spinlg(int spd, int Angle) { spindegree(spd, -abs(Angle)); }
+void spinlg(int spd, int Angle) {
+  spindegree(spd, -abs(Angle));
+}
 
-void spinrg(int spd, int Angle) { spindegree(spd, abs(Angle)); }
+void spinrg(int spd, int Angle) {
+  spindegree(spd, abs(Angle));
+}
 
-void turnlg(int spd, int Angle) { turndegree(spd, -abs(Angle)); }
+void turnlg(int spd, int Angle) {
+  turndegree(spd, -abs(Angle));
+}
 
-void turnrg(int spd, int Angle) { turndegree(spd, abs(Angle)); }
+void turnrg(int spd, int Angle) {
+  turndegree(spd, abs(Angle));
+}
 
-void turnlbg(int spd, int Angle) { turndegreeb(spd, abs(Angle)); }
+void turnlbg(int spd, int Angle) {
+  turndegreeb(spd, abs(Angle));
+}
 
-void turnrbg(int spd, int Angle) { turndegreeb(spd, -abs(Angle)); }
+void turnrbg(int spd, int Angle) {
+  turndegreeb(spd, -abs(Angle));
+}
 
-void slg(int Angle) { spindegree(-abs(Angle)); }
+void slg(int Angle) {
+  spindegree(-abs(Angle));
+}
 
-void srg(int Angle) { spindegree(abs(Angle)); }
+void srg(int Angle) {
+  spindegree(abs(Angle));
+}
 
-void tlg(int Angle) { turndegree(-abs(Angle)); }
+void tlg(int Angle) {
+  turndegree(-abs(Angle));
+}
 
-void trg(int Angle) { turndegree(abs(Angle)); }
+void trg(int Angle) {
+  turndegree(abs(Angle));
+}
 
-void tlbg(int Angle) { turndegreeb(abs(Angle)); }
+void tlbg(int Angle) {
+  turndegreeb(abs(Angle));
+}
 
-void trbg(int Angle) { turndegreeb(-abs(Angle)); }
+void trbg(int Angle) {
+  turndegreeb(-abs(Angle));
+}
 
-void slg(int spd, int Angle) { spindegree(spd, -abs(Angle)); }
+void slg(int spd, int Angle) {
+  spindegree(spd, -abs(Angle));
+}
 
-void srg(int spd, int Angle) { spindegree(spd, abs(Angle)); }
+void srg(int spd, int Angle) {
+  spindegree(spd, abs(Angle));
+}
 
-void tlg(int spd, int Angle) { turndegree(spd, -abs(Angle)); }
+void tlg(int spd, int Angle) {
+  turndegree(spd, -abs(Angle));
+}
 
-void trg(int spd, int Angle) { turndegree(spd, abs(Angle)); }
+void trg(int spd, int Angle) {
+  turndegree(spd, abs(Angle));
+}
 
-void tlbg(int spd, int Angle) { turndegreeb(spd, abs(Angle)); }
+void tlbg(int spd, int Angle) {
+  turndegreeb(spd, abs(Angle));
+}
 
-void trbg(int spd, int Angle) { turndegreeb(spd, -abs(Angle)); }
+void trbg(int spd, int Angle) {
+  turndegreeb(spd, -abs(Angle));
+}
 
 // ---------- ต่อเนื่อง (chainable, ไม่หยุดกลางทาง): เลี้ยวซ้ายแล้วขวา / ขวาแล้วซ้าย ----------
 
-void tlrg(int Angle) { turndegree_none(-abs(Angle)); turndegree(abs(Angle)); }
-void trlg(int Angle) { turndegree_none(abs(Angle)); turndegree(-abs(Angle)); }
+void tlrg(int Angle) {
+  turndegree_none(-abs(Angle));
+  turndegree(abs(Angle));
+}
+void trlg(int Angle) {
+  turndegree_none(abs(Angle));
+  turndegree(-abs(Angle));
+}
 
-void tlrg(int spd, int Angle) { turndegree_none(spd, -abs(Angle)); turndegree(spd, abs(Angle)); }
-void trlg(int spd, int Angle) { turndegree_none(spd, abs(Angle)); turndegree(spd, -abs(Angle)); }
+void tlrg(int spd, int Angle) {
+  turndegree_none(spd, -abs(Angle));
+  turndegree(spd, abs(Angle));
+}
+void trlg(int spd, int Angle) {
+  turndegree_none(spd, abs(Angle));
+  turndegree(spd, -abs(Angle));
+}
 
-void tlrg(int spd, int Angle, int Angle2) { turndegree_none(spd, -abs(Angle)); turndegree(spd, abs(Angle2)); /*SetG(spd);*/ }
-void trlg(int spd, int Angle, int Angle2) { turndegree_none(spd, abs(Angle)); turndegree(spd, -abs(Angle2)); /*SetG(spd);*/ }
+void tlrg(int spd, int Angle, int Angle2) {
+  turndegree_none(spd, -abs(Angle));
+  turndegree(spd, abs(Angle2)); /*SetG(spd);*/
+}
+void trlg(int spd, int Angle, int Angle2) {
+  turndegree_none(spd, abs(Angle));
+  turndegree(spd, -abs(Angle2)); /*SetG(spd);*/
+}
 
-void tlrbg(int Angle) { turndegreeb_none(abs(Angle)); turndegreeb(-abs(Angle)); /*SetGB(50);*/ }
-void trlbg(int Angle) { turndegreeb_none(-abs(Angle)); turndegreeb(abs(Angle)); /*SetGB(50);*/ }
+void tlrbg(int Angle) {
+  turndegreeb_none(abs(Angle));
+  turndegreeb(-abs(Angle)); /*SetGB(50);*/
+}
+void trlbg(int Angle) {
+  turndegreeb_none(-abs(Angle));
+  turndegreeb(abs(Angle)); /*SetGB(50);*/
+}
 
-void tlrbg(int spd, int Angle) { turndegreeb_none(spd, abs(Angle)); turndegreeb(spd, -abs(Angle)); /*SetGB(spd);*/ }
-void trlbg(int spd, int Angle) { turndegreeb_none(spd, -abs(Angle)); turndegreeb(spd, abs(Angle)); /*SetGB(spd);*/ }
+void tlrbg(int spd, int Angle) {
+  turndegreeb_none(spd, abs(Angle));
+  turndegreeb(spd, -abs(Angle)); /*SetGB(spd);*/
+}
+void trlbg(int spd, int Angle) {
+  turndegreeb_none(spd, -abs(Angle));
+  turndegreeb(spd, abs(Angle)); /*SetGB(spd);*/
+}
 
-void tlrbg(int spd, int Angle, int Angle2) { turndegreeb_none(spd, abs(Angle)); turndegreeb(spd, -abs(Angle2)); /*SetG(spd);*/ }
-void trlbg(int spd, int Angle, int Angle2) { turndegreeb_none(spd, -abs(Angle)); turndegreeb(spd, abs(Angle2)); /*SetG(spd);*/ }
+void tlrbg(int spd, int Angle, int Angle2) {
+  turndegreeb_none(spd, abs(Angle));
+  turndegreeb(spd, -abs(Angle2)); /*SetG(spd);*/
+}
+void trlbg(int spd, int Angle, int Angle2) {
+  turndegreeb_none(spd, -abs(Angle));
+  turndegreeb(spd, abs(Angle2)); /*SetG(spd);*/
+}
 
 void ToCenterLG() {
   BZon();
@@ -901,12 +1014,12 @@ void TrackSelectG(int spd, char select) {
   if (select == 'L') {
     spindegree(-90);
   } else if (select == 'l') {
-    ToCenterLG();
+    ToCenterLRG();
     spindegree(-90);
   } else if (select == 'R') {
     spindegree(90);
   } else if (select == 'r') {
-    ToCenterRG();
+    ToCenterLRG();
     spindegree(90);
   } else if (select == 'q' || select == 'Q') {
     turndegree(-90);
@@ -937,7 +1050,7 @@ void TrackSelectG(int spd, char select) {
       ReadCalibrateC();
       if (C[CCL] >= RefC || C[CCR] >= RefC) {
         Motor(-spd, -spd);
-        delay(5);
+        delay(tct_delay_break);
         MotorStop();
         BZoff();
         break;
@@ -971,21 +1084,17 @@ void TrackSelectG(int spd, char select) {
   } else if (select == 's') {
     Motor(-spd, -spd);
     delay(delay_break_f);
-    Motor(-1, -1);
-    delay(1);
     MotorStop();
   } else if (select == 'S') {
     ToFrontG();
     Motor(-tctL, -tctR);
     delay(tct_delay_break);
-    Motor(-1, -1);
-    delay(1);
     MotorStop();
   } else if (select == 'G') {
     ToFrontG();
     SetG(tct_delay_break);
   } else {
-    SetG(100);
+    SetG(spd);
   }
 }
 
@@ -1097,20 +1206,28 @@ void bbbg(int Speed, char select) {
   InitialSpeed();
   while (1) {
     RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
+
     ReadCalibrateB();
     if (B[1] > Ref || B[2] > Ref || B[3] > Ref || B[4] > Ref || B[5] > Ref || B[6] > Ref) break;
   }
   TrackSelectGB(Speed, select);
 }
 
-void ffbg(int Speed, char select, int direction) { SetDirectionG(direction); ffbg(Speed, select); }
-void bbbg(int Speed, char select, int direction) { SetDirectionG(direction); bbbg(Speed, select); }
+void ffbg(int Speed, char select, int direction) {
+  SetDirectionG(direction);
+  ffbg(Speed, select);
+}
+void bbbg(int Speed, char select, int direction) {
+  SetDirectionGB(direction);
+  bbbg(Speed, select);
+}
 
 void ffdg(int Speed, char select, float distance_cm) {
   BaseSpeed = Speed;
   InitialSpeed();
   while (1) {
     RunG(LeftBaseSpeed, RightBaseSpeed);
+
     if (analogRead(DIST) >= distance_cm) break;
   }
   TrackSelectG(Speed, select);
@@ -1121,6 +1238,7 @@ void bbdg(int Speed, char select, float distance_cm) {
   InitialSpeed();
   while (1) {
     RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
+
     if (analogRead(DIST) <= distance_cm) break;
   }
   TrackSelectGB(Speed, select);
@@ -1131,6 +1249,7 @@ void ffdgs(int Speed, char select, float distance_cm) {
   InitialSpeed();
   while (1) {
     RunG(LeftBaseSpeed, RightBaseSpeed);
+
     if (analogRead(DIST) >= distance_cm) break;
   }
   TrackSelectG(Speed, select);

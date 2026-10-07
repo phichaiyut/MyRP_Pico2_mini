@@ -17,23 +17,25 @@ void Setting() {
   // set_line_center(0);        // เดินธรรมดา เข้ากลางหุ่น
   set_line_center(1);                        // เดินตามเส้น เข้ากลางหุ่น
   SetToCenterSpeed(20);                      // ความเร็วเข้ากลางหุ่น
-  set_brake_fc(20,30); // การเบรค ตอนเดินหน้า
+  set_brake_fc(10,30); // การเบรค ตอนเดินหน้า
   set_brake_bc(10,30); // การเบรค ตอนถอยหลัง
 
   /******************** TURN & SPEED CONFIG ********************/
   SetTurnSpeed(50);  // ความเร็วเลี้ยวหุ่น (l L ) (r R)
 
-  TurnSpeedLeft(-20, 70, 40);   // เลี้ยวซ้าย (q Q)
-  TurnSpeedRight(70, -20, 40);  // เลี้ยวขวา (e E)
+  TurnSpeedLeft(-25, 100, 60);   // เลี้ยวซ้าย (q Q)
+  TurnSpeedRight(100, -25, 60);  // เลี้ยวขวา (e E)
+  SetSensorTurnLeftRight(2, 5); // เซนเซอร์หน้าที่ใช้หยุดเลี้ยว (ซ้าย 0–7, ขวา 0–7) ของ TurnLeft/TurnRight
+  SetSensorTurnLeftRight_B(5, 2);  // เซนเซอร์หลังที่ใช้หยุดเลี้ยวของ TurnLeft_B (B[7..l]) / TurnRight_B (B[0..r])
 
-  TurnBackSpeedLeft(-15, 80, 60);   // เลี้ยวซ้าย (q Q)
-  TurnBackSpeedRight(80, -15, 60);  // เลี้ยวขวา (e E)
+  TurnBackSpeedLeft(-25, 100, 60);   // เลี้ยวซ้าย (q Q)
+  TurnBackSpeedRight(100, -25, 60);  // เลี้ยวขวา (e E)
 
-  TurnSpeedLeftBackF(-15, 80, 60);   // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หน้า (TurnLeftBackF)
-  TurnSpeedRightBackF(80, -15, 60);  // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หน้า (TurnRightBackF)
+  TurnSpeedLeftBackF(-25, 100, 60);   // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หน้า (TurnLeftBackF)
+  TurnSpeedRightBackF(100, -25, 60);  // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หน้า (TurnRightBackF)
 
-  TurnSpeedLeftBackB(-15, 80, 60);   // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หลัง (TurnLeftBackB)
-  TurnSpeedRightBackB(80, -15, 60);  // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หลัง (TurnRightBackB)
+  TurnSpeedLeftBackB(-25, 100, 60);   // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หลัง (TurnLeftBackB)
+  TurnSpeedRightBackB(100, -25, 60);  // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หลัง (TurnRightBackB)
 
   ModeSpdPID(0, 100, -5);  // โหมดควบคุมความเร็ว
   // SetRobotPID(0.014, 0.04);  // PID หลัก (ยังไม่ใช้)

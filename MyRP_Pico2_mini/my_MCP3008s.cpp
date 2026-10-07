@@ -16,7 +16,7 @@ bool my_MCP3008s::begin(uint8_t cs, SPIClass* theSPI) {
 }
 
 bool my_MCP3008s::begin(uint8_t sck, uint8_t mosi, uint8_t miso,
-                             uint8_t cs) {
+                        uint8_t cs) {
   hwSPI = false;
 
   this->sck = sck;
@@ -64,15 +64,15 @@ int my_MCP3008s::SPIxADC(uint8_t channel, bool differential) {
     sgldiff = 1;
   }
 
-  command = ((0x01 << 7) |             // start bit
-             (sgldiff << 6) |          // single or differential
-             ((channel & 0x07) << 3)); // channel number
+  command = ((0x01 << 7) |              // start bit
+             (sgldiff << 6) |           // single or differential
+             ((channel & 0x07) << 3));  // channel number
 
   if (hwSPI) {
     byte b0, b1, b2;
 
     _spi->beginTransaction(
-        SPISettings(MCP3008s_SPI_MAX, MCP3008s_SPI_ORDER, MCP3008s_SPI_MODE));
+      SPISettings(MCP3008s_SPI_MAX, MCP3008s_SPI_ORDER, MCP3008s_SPI_MODE));
     digitalWrite(cs, LOW);
 
     b0 = _spi->transfer(command);

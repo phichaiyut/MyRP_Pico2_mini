@@ -36,9 +36,11 @@ void BeepScanner() {
 
 void blink(int times) {
   for (int i = 0; i < times; i++) {
-    digitalWrite(LED_BUILTIN, HIGH); delay(150);
-    digitalWrite(LED_BUILTIN, LOW);  delay(150);
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(150);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(150);
   }
 }
 
-#endif // MYRP_PICO2_MINI_BUZZER_H
+#endif  // MYRP_PICO2_MINI_BUZZER_H
