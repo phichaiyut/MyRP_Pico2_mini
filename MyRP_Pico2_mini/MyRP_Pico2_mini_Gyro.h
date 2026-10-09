@@ -571,12 +571,6 @@ void SetDirectionG(int direction) {
   previous_errorGB = error;
 }
 
-// ทิศสำหรับถอยหลัง: direction = ทิศที่หุ่น "เคลื่อนที่ไป" (อ้างอิงเดียวกับเดินหน้า)
-// เช่น bbcmg(spd, cm, 180) = ถอยไปทางทิศ 180 โดยหน้าหุ่นหันทิศ 0
-void SetDirectionGB(int direction) {
-  SetDirectionG(direction + 180);
-}
-
 void bbtimerg(int Speed, int totalTime) {
   BaseSpeed = Speed;
   InitialSpeed();
@@ -748,7 +742,7 @@ void fftimerg(int Speed, int totalTime, int direction) {
   fftimerg(Speed, totalTime);
 }
 void bbtimerg(int Speed, int totalTime, int direction) {
-  SetDirectionGB(direction);
+  SetDirectionG(direction);
   bbtimerg(Speed, totalTime);
 }
 
@@ -757,7 +751,7 @@ void ffcmgs(int Speed, float distance_cm, int direction) {
   ffcmgs(Speed, distance_cm);
 }
 void bbcmgs(int Speed, float distance_cm, int direction) {
-  SetDirectionGB(direction);
+  SetDirectionG(direction);
   bbcmgs(Speed, distance_cm);
 }
 
@@ -766,7 +760,7 @@ void ffcmg(int Speed, float distance_cm, int direction) {
   ffcmg(Speed, distance_cm);
 }
 void bbcmg(int Speed, float distance_cm, int direction) {
-  SetDirectionGB(direction);
+  SetDirectionG(direction);
   bbcmg(Speed, distance_cm);
 }
 
@@ -1222,7 +1216,7 @@ void ffbg(int Speed, char select, int direction) {
   ffbg(Speed, select);
 }
 void bbbg(int Speed, char select, int direction) {
-  SetDirectionGB(direction);
+  SetDirectionG(direction);
   bbbg(Speed, select);
 }
 

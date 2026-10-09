@@ -98,6 +98,7 @@ void Motor(int left, int right) {
 
   analogWrite(PWMA, pwmL);
   analogWrite(PWMB, pwmR);
+  delayMicroseconds(50);  // เพิ่ม delay เพื่อให้มอเตอร์หมุนช้าลงและลดการสั่น
 }
 
 void Move(int l, int r, int t) {

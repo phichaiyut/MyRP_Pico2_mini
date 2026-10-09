@@ -35,9 +35,10 @@
 // set_line_center(0);        // เดินธรรมดาแล้วเข้ากึ่งกลางหุ่น (ไม่สนเส้น)
 // set_line_center(1);        // เดินตามเส้น PID แล้วค่อยเข้ากึ่งกลางหุ่น
 // SetToCenterSpeed(speed);   // ความเร็วที่ใช้ตอนเข้ากึ่งกลาง (ToCenter/ToCenterL/ToCenterR ฯลฯ)
-// set_brake_fc(ff, fc);      // เวลาเบรก (ms) ตอนเดินหน้า: ff = เบรกหลังผ่านแยกก่อนเลี้ยว q/e/Q/E (ค่าเริ่มต้น 5) | fc = เบรกตอน ToCenter (ค่าเริ่มต้น 30)
-// set_brake_bc(bf, bc);      // เวลาเบรก (ms) ตอนถอยหลัง: bf (ค่าเริ่มต้น 10, ยังไม่มีฟังก์ชันใดใช้ค่านี้) | bc = เบรกตอน BackCenter (ค่าเริ่มต้น 20)
-//                            // ⚠️ e/E/Q ของ bb ใช้ค่า ff จาก set_brake_fc() ไม่ใช่ bf
+// set_brake_fc(ff, fc);      // ff: ⚠️ ตัวแปร break_ff ไม่ถูกอ่านที่ไหนในไลบรารีแล้ว (ใส่เท่าไหร่ก็ไม่มีผล)
+//                            // fc: เวลาเบรก (ms) ตอนเข้ากึ่งกลาง ToCenter/ToCenterL/ToCenterR (เส้น) และ ToCenterLG/ToCenterRG/ToCenterLRG (gyro) ค่าเริ่มต้น 30
+// set_brake_bc(bf, bc);      // bf: ⚠️ ตัวแปร break_bf ก็ไม่ถูกอ่านที่ไหนเช่นกัน
+//                            // bc: เวลาเบรก (ms) ตอน BackCenter (เส้น) และ BackCenterG (gyro) ค่าเริ่มต้น 20
 
 // ── ความเร็วเลี้ยว/หมุน ────────────────────────────────
 // SetTurnSpeed(speed);              // ความเร็ว default ของ spinl()/spinr() (เมื่อไม่ระบุ speed เอง)
@@ -51,10 +52,6 @@
 // TurnSpeedLeftBackB(l, r, delay);  TurnSpeedRightBackB(l, r, delay);   // ตั้งค่าให้ TurnLeftBackB()/TurnRightBackB() (ถอยเลี้ยวล้อเดียว เช็คเซนเซอร์หลัง B[])
 // ⚠️ ค่า l, r ของทุก TurnSpeed*() ถูกส่งเข้า Motor() ตรง ๆ แบบมีเครื่องหมาย (ติดลบ = ล้อหมุนถอย)
 //    เช่น TurnSpeedLeft(-20, 70, 40) = ล้อซ้ายถอย 20 ล้อขวาไปหน้า 70 | ใส่ 0 = ล้อนั้นหยุด (เลี้ยวล้อเดียว)
-// TurnSpeedLeftBackF(l, r, delay);  // ความเร็วล้อเดียวถอยหลัง เช็คเส้นด้วยเซนเซอร์หน้า F[] ตอน TurnLeftBackF()
-// TurnSpeedRightBackF(l, r, delay); // เหมือนกันแต่ TurnRightBackF()
-// TurnSpeedLeftBackB(l, r, delay);  // ความเร็วล้อเดียวถอยหลัง เช็คเส้นด้วยเซนเซอร์หลัง B[] ตอน TurnLeftBackB()
-// TurnSpeedRightBackB(l, r, delay); // เหมือนกันแต่ TurnRightBackB()
 
 // ── โหมดควบคุมความเร็ว PID ──────────────────────────────
 // ModeSpdPID(mode, max, min);   // mode: โหมดคุมความเร็ว | max/min: ขอบเขตความเร็วที่ PID ปรับได้
@@ -102,37 +99,39 @@
  *
  *   ---------- (A) ตระกูลปกติ (เส้น PID): ff* → TrackSelectF | bb* → TrackSelectB ----------
  *
- *   's' : เบรกหยุดทันที ไม่รอเช็คเซนเซอร์ (ถือว่าอยู่ตรงจุดหยุดพอดีแล้ว)
- *          ff: ถอยสั้น ๆ (Move -15→-10→-1) แล้ว MotorStop()
- *          bb: เดินหน้าสั้น ๆ (Move 15→10→1) แล้ว MotorShot() (เบรกกระชากด้วย back-EMF แรงกว่า)
- *   'S' : วิ่ง PID ตามเส้นต่อไปก่อนจนกว่าเซนเซอร์หน้า/หลังจะเจอขอบเส้น (F[0]/F[7] หรือ B[0]/B[7]) แล้วค่อยเบรกแบบเดียวกับ 's'
+ *   's' : เบรกหยุดทันที ไม่รอเช็คเซนเซอร์ (ถือว่าอยู่ตรงจุดหยุดพอดีแล้ว) — ff: Motor(-spd,-spd) | bb: Motor(spd,spd)
+ *          เบรก delay_break_f (ff) / delay_break_b (bb) ms แล้ว MotorStop() — ค่านี้มาจากตาราง SetDelayBreak(ch,...) ตามช่วงความเร็วปัจจุบัน ไม่ใช่ spd ที่ส่งเข้าฟังก์ชัน
+ *          ⚠️ ไม่มี MotorShot()/เบรกกระชากแบบ back-EMF ให้ 's' ของ bb อีกแล้ว (รุ่นก่อนมี เวอร์ชันนี้ตัดออก) ตามด้วย MotorStop(2) (เบรกแล้วบี๊บ 2ms)
+ *   'S' : วิ่ง PID ตามเส้นต่อก่อนจนเซนเซอร์ขอบเจอเส้น (ff: F[0]/F[7] | bb: B[0]/B[7]) แล้วเบรกด้วย tctL/tctR (ff) หรือ bctL/bctR (bb)
+ *          เป็นเวลา tct_delay_break / bct_delay_break ms (= delay_break_f/_b ที่ความเร็ว tct/bct ขณะเรียก SetToCenterSpeed()) แล้ว MotorStop()/MotorStop(2)
  *   'p' || 'P' : วิ่งทะลุผ่านทางแยก/เส้นขวางด้วยความเร็ว spd ตรง ๆ (ไม่ใช้ PID) จนสองเซนเซอร์ริมพ้นเส้น (เช็คซ้ำ 2 รอบกันสัญญาณรบกวน) มีเสียง buzzer ระหว่างวิ่งผ่าน
  *                'P' ต่างจาก 'p' แค่เรียก ToFront()/ToBack() วิ่งเข้าหาเส้นด้วย PID ก่อนเริ่มนับเงื่อนไข
  *   'c' || 'C' : เข้ากึ่งกลางทางแยกแล้วหยุด (ToCenter()/BackCenter()) | 'C' เรียก ToFront()/ToBack() ก่อน
  *                ก่อนหยุดมีพัลส์เบรกสวนทิศ ระยะเวลา break_fc (ff) / break_bc (bb) ms — ปรับด้วย set_brake_fc()/set_brake_bc()
  *   'l' || 'L' : เข้ากึ่งกลางทางแยกแล้วหมุนซ้าย 90° (spinl()) — พิมพ์เล็ก/ใหญ่ทำงาน "เหมือนกันทุกประการ" ในตระกูลนี้ (case ถูก fall-through รวมกัน)
  *   'r' || 'R' : เข้ากึ่งกลางทางแยกแล้วหมุนขวา 90° (spinr()) — พิมพ์เล็ก/ใหญ่เหมือนกัน
- *   'q' || 'Q' : ff = เดินหน้าด้วย tctL/tctR จนเซนเซอร์ F[0] และ F[7] พ้นเส้นทั้งคู่ (เช็คซ้ำ 2 รอบ) → พัลส์เบรกถอย break_ff ms → TurnLeft()
- *                bb = ถอยจนเซนเซอร์ B[0] และ B[7] พ้นเส้นทั้งคู่ → TurnRight_B()  ⚠️ ทิศสลับกับ ff!
- *   'e' || 'E' : ff = เงื่อนไขเดียวกับ q แต่จบด้วย TurnRight()
- *                bb = เงื่อนไขเดียวกับ q แต่จบด้วย TurnLeft_B()  ⚠️ ทิศสลับกับ ff!
+ *   'q' || 'Q' : ff = เดินหน้าด้วย tctL/tctR จนเซนเซอร์ F[0] และ F[7] พ้นเส้นทั้งคู่ → หน่วง TurnDelayL ms (ยังไหลด้วยความเร็วเดิม ไม่เบรก) → TurnLeft()
+ *                bb = ถอยด้วย bctL/bctR จนเซนเซอร์ B[0] และ B[7] พ้นเส้นทั้งคู่ → หน่วง TurnBackDelayR ms → TurnRight_B()  ⚠️ ทิศสลับกับ ff!
+ *                TurnLeft()/TurnRight()/TurnLeft_B()/TurnRight_B() กวาดเซนเซอร์ตาม SetSensorTurnLeftRight()/_B() ที่ตั้งไว้ (ดูหมวด "เลี้ยว/หมุน")
+ *   'e' || 'E' : ff = เงื่อนไขเดียวกับ q แต่หน่วง TurnDelayR ms แล้วจบด้วย TurnRight()
+ *                bb = เงื่อนไขเดียวกับ q แต่หน่วง TurnBackDelayL ms แล้วจบด้วย TurnLeft_B()  ⚠️ ทิศสลับกับ ff!
  *                ('Q'/'E' ต่างจากตัวพิมพ์เล็กแค่เรียก ToFront()/ToBack() ก่อนเข้าเงื่อนไข)
- *                รายละเอียดที่ต่างของ bb: รอบแรกวิ่งด้วย bctL/bctR รอบสองครึ่งความเร็ว (q/Q ตัวเล็กไม่มีพัลส์เบรก break_ff,
- *                'e' ตัวเล็กไม่เรียก BZoff() → buzzer อาจค้างดัง ถ้าต้องการเบรก/ปิดเสียงให้ใช้ตัวพิมพ์ใหญ่ 'Q'/'E')
- *                พัลส์เบรกของ bb (e/E/Q) ใช้ break_ff จาก set_brake_fc() ไม่ใช่ break_bf จาก set_brake_bc()
+ *                ⚠️ ตัวแปร break_ff (จาก set_brake_fc()) ไม่ถูกใช้แล้วในทุกเคสนี้ — ความล่าช้าก่อนเลี้ยวมาจาก TurnDelayL/R, TurnBackDelayL/R เท่านั้น
  *   'a' || 'A' : เข้ากึ่งกลางแล้วหมุนซ้ายด้วยเซนเซอร์หลัง (spinl_B()) — ทำงานเหมือนกันทั้ง ff/bb (ไม่สลับทิศแบบ q/e)
  *   'd' || 'D' : เข้ากึ่งกลางแล้วหมุนขวาด้วยเซนเซอร์หลัง (spinr_B()) — ทำงานเหมือนกันทั้ง ff/bb
- *   'b' || 'B' : เข้ากึ่งกลาง (ModeToCenter/ModeToCenterBack) แล้ววิ่งต่อจนเซนเซอร์ "ฝั่งตรงข้ามทิศทางวิ่ง" เจอเส้น
- *                ff เช็ค B[] (หลัง) | bb เช็ค F[] (หน้า) แล้วสะบัดเบรกสั้น ๆ ไปทิศตรงข้ามการวิ่ง
- *   'g' || 'G' : เรียก SetFG(100) ปรับตรงมุมด้วย gyro ค้างไว้ 100ms | 'G' เรียก ToFront()/ToBack() ก่อน
- *   อื่น ๆ (default) : MotorStop(20) หยุดพร้อม beep 20ms
+ *   'b' || 'B' : เข้ากึ่งกลาง (ModeToCenter/ModeToCenterBack) แล้ววิ่งต่อจนเซนเซอร์ "ฝั่งตรงข้ามทิศทางวิ่ง" เจอเส้น (ff เช็ค B[] | bb เช็ค F[])
+ *                เบรกด้วย tct_delay_break (ff) / bct_delay_break (bb) ms แล้วสะบัดกลับ ทิศตรงข้ามการวิ่ง 1ms แล้ว MotorStop()
+ *                ⚠️ ตัวพิมพ์เล็ก 'b' ของ ff มีพัลส์สะบัดกลับนี้ แต่ 'B' (ตัวใหญ่) ของ ff ไม่มี — bb ไม่สลับ 'b'/'B' ทำงานเหมือนกัน (case รวมกัน)
+ *   'g' || 'G' : เรียก SetFG(spd) ปรับตรงมุมด้วย gyro ค้างไว้ spd มิลลิวินาที (ใช้ค่า spd ที่ส่งเข้าฟังก์ชันตรง ๆ ไม่ใช่ 100ms คงที่) | 'G' เรียก ToFront()/ToBack() ก่อน
+ *   อื่น ๆ (default) : MotorStop(spd) หยุดพร้อม beep เป็นเวลา spd มิลลิวินาที (ไม่ใช่ 20ms คงที่)
  *
  *   ---------- (B) ตระกูล gyro (RunG/RunGB): *g → TrackSelectG | *g...B → TrackSelectGB ----------
  *
  *   'L' : หมุนทันที 90° ซ้ายด้วย gyro (spindegree(-90)) โดย "ไม่" เข้ากึ่งกลางก่อน — G และ GB เรียกเหมือนกันทุกตัวอักษร ไม่กลับทิศ
- *   'l' : เข้ากึ่งกลางทางแยกด้วย gyro ก่อน (ToCenterLG()/BackCenterG()) แล้วค่อยหมุนซ้าย 90°
+ *   'l' : เข้ากึ่งกลางทางแยกด้วย gyro ก่อน แล้วค่อยหมุนซ้าย 90° — G ใช้ ToCenterLRG() (เจอเส้นข้างซ้ายหรือขวาก็ได้) | GB ใช้ BackCenterG()
+ *         ⚠️ G เปลี่ยนจาก ToCenterLG() (เฉพาะเส้นซ้าย) มาเป็น ToCenterLRG() (เส้นซ้ายหรือขวาก็ได้) แล้ว — 'l' และ 'r' ของ G ใช้ฟังก์ชันเข้ากึ่งกลางตัวเดียวกัน ต่างกันแค่ทิศหมุนตอนจบ
  *   'R' : หมุนทันที 90° ขวาด้วย gyro (spindegree(90)) ไม่เข้ากึ่งกลางก่อน
- *   'r' : เข้ากึ่งกลางด้วย gyro ก่อนแล้วค่อยหมุนขวา 90°
+ *   'r' : เข้ากึ่งกลางด้วย gyro ก่อน (G: ToCenterLRG() | GB: BackCenterG()) แล้วค่อยหมุนขวา 90°
  *         ⚠️ ต่างจากตระกูล (A): ที่นี่ตัวพิมพ์เล็ก 'l'/'r' (เข้ากึ่งกลางก่อนค่อยหมุน) กับตัวพิมพ์ใหญ่ 'L'/'R' (หมุนทันที ไม่เข้ากึ่งกลาง)
  *         มีความหมาย "ต่างกันจริง" ไม่เหมือนตระกูล (A) ที่พิมพ์เล็ก/ใหญ่เท่ากัน — ระวังเผลอใช้ตัวพิมพ์ผิด
  *   'q' || 'Q' : G  = เลี้ยวโค้งซ้าย (turndegree(-90))
@@ -141,13 +140,17 @@
  *                GB = เลี้ยวโค้ง "ซ้าย" (turndegreeb(-90))  ⚠️ ทิศสลับกับ G
  *   'p' || 'P' : วิ่งทะลุผ่านทางแยกด้วย gyro (RunG/RunGB) จนพ้นเส้น 2 รอบ แทรก fftimerg/bbtimerg สั้น ๆ (5ms) กลางทาง มีเสียง buzzer
  *                พิมพ์เล็ก/ใหญ่เหมือนกัน — ไม่มี ToFront()/ToBack() นำหน้าแบบตระกูล (A)
- *   'c' || 'C' : ปรับตรง gyro 20 รอบ แล้วเข้ากึ่งกลางทางแยกด้วยเซนเซอร์ C[] แล้วเบรกหยุด (พิมพ์เล็ก/ใหญ่เหมือนกัน)
- *   'b' || 'B' : ปรับตรง gyro 20 รอบ วิ่งเข้ากึ่งกลาง (C[]) ก่อน แล้ววิ่งต่อจนเซนเซอร์ B[] เจอเส้นอีกครั้ง (ทั้ง G และ GB เช็ค B[] เหมือนกัน) แล้วสะบัดมอเตอร์สั้น ๆ แล้วหยุด
- *   's' : เบรกสั้น ๆ ทันที ไม่รอเงื่อนไข — G: ถอยสั้น ๆ (10→1) แล้วหยุด | GB: เดินหน้าสั้น ๆ (10→1) แล้วหยุด
- *   'S' : วิ่งตรงด้วย gyro ต่อก่อนจนเซนเซอร์ F[1..6] (G: ToFrontG()) / B[1..6] (GB: ToBackG()) เจอเส้น แล้วเบรกแบบเดียวกับ 's'
- *   'G' : วิ่งตรงด้วย gyro จนเจอเส้น (ToFrontG()/ToBackG()) แล้วล็อกมุมด้วย SetG(spd) (G) / SetG(100) (GB)
- *   'g' และ 'a'/'A', 'd'/'D' : ⚠️ ไม่มี case รองรับในตระกูลนี้ ตกไปเงื่อนไข else เหมือนอักขระอื่น ๆ ที่ไม่รู้จัก → เรียก SetG(100) ทันที
- *                                 (ไม่ใช่ SetFG แบบตระกูล (A) และแม้แต่ TrackSelectGB ก็เรียก SetG(100) ไม่ใช่ SetGB)
+ *   'c' || 'C' : ปรับตรง gyro 20 รอบ แล้ววิ่งต่อจนเซนเซอร์ C[] เจอกึ่งกลางทางแยก แล้วเบรกด้วย Motor(-spd,-spd)/Motor(spd,spd) (พิมพ์เล็ก/ใหญ่เหมือนกัน)
+ *                เบรก tct_delay_break ms (G) / delay_break_b ms (GB) ⚠️ GB ใช้ตารางเบรกตามความเร็ว ไม่ใช่ bct_delay_break แบบที่ G ใช้ tct_delay_break
+ *   'b' || 'B' : ปรับตรง gyro 20 รอบ วิ่งเข้ากึ่งกลาง (C[]) ก่อน แล้ววิ่งต่อจนเซนเซอร์ B[] เจอเส้นอีกครั้ง (ทั้ง G และ GB เช็ค B[] เหมือนกัน แม้ GB กำลังถอยหลัง)
+ *                เบรกด้วย tct_delay_break (G) / bct_delay_break (GB) ms แล้วสะบัดกลับ 1ms แล้วหยุด
+ *   's' : เบรกสั้น ๆ ทันที ไม่รอเงื่อนไข — G: Motor(-spd,-spd) เบรก delay_break_f ms แล้วหยุด
+ *                                         GB: Motor(spd,spd) เบรก delay_break_b ms แล้วสะบัดกลับ 1ms แล้วหยุด (ไม่สมมาตรกับ G)
+ *   'S' : วิ่งตรงด้วย gyro ต่อก่อนจนเซนเซอร์ F[1..6] (G: ToFrontG()) / B[1..6] (GB: ToBackG()) เจอเส้น
+ *                G: เบรกด้วย tctL/tctR เป็นเวลา tct_delay_break ms แล้วหยุด | GB: เบรกด้วย bctL/bctR เป็นเวลา bct_delay_break ms แล้วสะบัดกลับ 1ms แล้วหยุด
+ *   'G' : วิ่งตรงด้วย gyro จนเจอเส้น (ToFrontG()/ToBackG()) แล้วล็อกมุมด้วย SetG(tct_delay_break) (G) / SetG(bct_delay_break) (GB)
+ *   'g' และ 'a'/'A', 'd'/'D' : ⚠️ ไม่มี case รองรับในตระกูลนี้ ตกไปเงื่อนไข else เหมือนอักขระอื่น ๆ ที่ไม่รู้จัก → เรียก SetG(spd) ทันที (ใช้ค่า spd ที่ส่งเข้ามา ไม่ใช่ 100ms คงที่)
+ *                                 (ไม่ใช่ SetFG แบบตระกูล (A) และแม้แต่ TrackSelectGB ก็เรียก SetG(spd) ไม่ใช่ SetGB)
  */
 
 
@@ -233,7 +236,7 @@
 
 // ถอยหลัง
 // BackCenter();   // เจอเส้นข้างซ้ายหรือขวาก็ได้
-// ToBack();       // วิ่ง PID ถอยหลังจนเซนเซอร์หลังเจอขอบเส้น B[0]/B[7] (ใช้ tctL/tctR)
+// ToBack();       // วิ่ง PID ถอยหลังจนเซนเซอร์หลังเจอขอบเส้น B[0]/B[7] (ใช้ bctL/bctR)
 
 // จัดตำแหน่งกึ่งกลางเส้นแบบละเอียด (ตอนวางหุ่นก่อนเริ่ม)
 // set_f(num);   set_fc(num);      // ด้านหน้า (เซนเซอร์ล้อ / เซนเซอร์ข้าง)
@@ -264,20 +267,14 @@
 // TurnL / TurnR = เลี้ยวโค้ง (ล้อเดียวหมุน) ใช้ TurnSpeedLeft()/TurnSpeedRight() ที่ตั้งไว้
 // TurnLeft();      TurnRight();
 
-// เลี้ยวล้อเดียวแบบถอยหลัง เช็คเส้นด้วยเซนเซอร์หน้า F[] ใช้ TurnSpeedLeftBackF()/TurnSpeedRightBackF() ที่ตั้งไว้
-// TurnLeftBackF();  TurnRightBackF();
-
-// ชุดเดียวกันแต่ใช้เซนเซอร์ฝั่งหลัง (ตอนถอยหลัง)
+// ชุดเดียวกันแต่ใช้เซนเซอร์ฝั่งหลัง (ตอนถอยหลัง) — TurnLeft_B/TurnRight_B กวาด B[] ด้วยเช่นกัน (ควบคุมด้วย SetSensorTurnLeftRight_B)
 // spinl_B(speed);  spinr_B(speed);
 // spinl2_B(speed); spinr2_B(speed);
 // TurnLeft_B();    TurnRight_B();
 
-// เลี้ยวล้อเดียวแบบ "ถอยหลัง" (ตั้งค่าแยกด้วย TurnSpeed*BackF / TurnSpeed*BackB ใน Setting.ino)
+// เลี้ยวล้อเดียวแบบ "ถอยหลัง" (ตั้งค่าแยกด้วย TurnSpeed*BackF / TurnSpeed*BackB ใน Setting.ino — ไม่ใช่ SetSensorTurnLeftRight)
 // TurnLeftBackF();   TurnRightBackF();    // เช็คเส้นด้วยเซนเซอร์หน้า F[] (เลือกเซนเซอร์ตามความเร็วล้อ) ตอนจบเบรก+lf() ปรับเข้าเส้น
 // TurnLeftBackB();   TurnRightBackB();    // เช็คเส้นด้วยเซนเซอร์หลัง B[] (เลือกเซนเซอร์ตามความเร็วล้อ)
-
-// เลี้ยวล้อเดียวแบบถอยหลัง เช็คเส้นด้วยเซนเซอร์หลัง B[] ใช้ TurnSpeedLeftBackB()/TurnSpeedRightBackB() ที่ตั้งไว้
-// TurnLeftBackB();  TurnRightBackB();
 
 
 /* =====================================================
@@ -285,7 +282,7 @@
    ===================================================== */
 
 // 🔧 การตั้งค่าเริ่มต้น
-// resetAngles();        // รีเซ็ตมุมอ้างอิงของ IMU (ทำตอนหุ่นอยู่นิ่ง)
+// resetAngles();        // รีเซ็ตมุมอ้างอิงของ IMU (ทำตอนหุ่นอยู่นิ่ง) — อ่านค่าเฉลี่ย 5 ครั้งมาตั้งเป็น current_degree กันค่าสะเปะสะปะตอนเพิ่งรีเซ็ต
 // SetRobotAngle();       // อ่านมุมปัจจุบันเก็บเป็นค่าอ้างอิง (current_degree)
 // gyroZ();                // คืนค่ามุมปัจจุบัน (องศา)
 
@@ -294,6 +291,15 @@
 // SetFG(ms);   setfg(ms);      // โหมดหน้า
 // SetG(ms);    setg(ms);       // โหมดทั่วไป
 // SetGB(ms);   setgb(ms);      // โหมดถอยหลัง
+
+// ⚙️ ปรับความไวของ spindegree/turndegree/turndegreeb และ RunG/RunGB (Setting.ino) — ค่าเริ่มต้นตามวงเล็บ
+// SetGyroTurn(kp, kd, maxSpd, minSpd, smallAngle, stopThr);   // ค่าเริ่มต้น: 1.2, 0.6, 30, 10, 20.0, 1.0 — ใช้กับ turndegree()/turndegreeb() (เลี้ยวล้อเดียว)
+// SetGyroSpin(kp, kd, maxSpd, minSpd, smallAngle, stopThr);   // ค่าเริ่มต้น: 0.9, 0.6, 30, 10, 10.0, 1.0 — ใช้กับ spindegree() (หมุนอยู่กับที่)
+// SetGyroRun(kp, kd);    // ค่าเริ่มต้น 2.5, 1.5 — ตั้ง kpG/kdG ให้ RunG() (เดินหน้าตรงด้วยไจโร)
+// SetGyroRunB(kp, kd);   // ค่าเริ่มต้น 2.5, 1.5 — ตั้ง kpGB/kdGB ให้ RunGB() (ถอยหลังตรงด้วยไจโร)
+// ModeSpdGyro(mode, max, min);              // จำกัดกำลัง RunG/RunGB ทั้งคู่ (0=0..max ติดลบ→min | 1=min..max | 2=-Speed..Speed | 3=..max ติดลบ→-Speed | 4=0..Speed ไม่ถอยล้อ ค่าเริ่มต้น)
+// ModeSpdGyro(modeF, modeB, max, min);      // เหมือนกันแต่แยกโหมดเดินหน้า (RunG) / ถอยหลัง (RunGB) คนละค่า
+// ตัวอย่าง (ค่าเริ่มต้นจาก Setting.ino): ModeSpdGyro(4, 100, 0);
 
 // SetFG/SetG/SetGB ข้างบนคือ loop เรียก HoldAngleF()/HoldAngle()/HoldAngleB() ซ้ำจนครบเวลาที่กำหนด
 // เรียกฟังก์ชันเดี่ยว ๆ ด้านล่างเองได้ ถ้าต้องการควบคุม loop เอง (เช่นเรียกซ้ำใน loop() หลักของสเก็ตช์)
@@ -328,6 +334,8 @@
 // turndegree_none(Angle);            turndegree_none(speed, Angle);       // ค่า default speed = 50 ถ้าไม่ระบุ
 // turndegreeb_none(Angle);           turndegreeb_none(speed, Angle);      // เหมือนกันแต่ตอนถอยหลัง
 // ต่างจาก turndegree/turndegreeb ตรงที่ไม่ MotorStop() ตอนจบ (ไหลต่อท่าถัดไปได้ลื่นกว่า)
+// turndirection_none(direction);     turndirection_none(speed, direction);    // เหมือน turndegree_none แต่ไปทิศสัมบูรณ์ (default speed = 30)
+// turndirectionb_none(direction);    turndirectionb_none(speed, direction);  // เหมือนกันแต่ตอนถอยหลัง
 
 // 🔀 หมุนสองจังหวะต่อเนื่อง (ซ้ายแล้วขวา หรือขวาแล้วซ้าย) ไม่เบรกกลาง — ใช้ turndegree_none/turndegreeb_none ข้างในแล้วปิดท้ายด้วย SetG
 // tlrg(Angle);              trlg(Angle);              // เดินหน้า: ซ้ายแล้วขวา (tlrg) / ขวาแล้วซ้าย (trlg) มุมเท่ากันทั้งสองจังหวะ
