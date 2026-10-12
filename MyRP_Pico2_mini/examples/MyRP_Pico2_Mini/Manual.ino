@@ -9,7 +9,6 @@
      Mission();      // โค้ดภารกิจ
    ===================================================== */
 
-
 /* =====================================================
    🛠️ SETTING.INO — คู่มือฟังก์ชันตั้งค่าทั้งหมด
    (เรียงตามลำดับที่ปรากฏใน Setting.ino)
@@ -45,7 +44,6 @@
 // TurnSpeedLeft(l, r, delay);       // ความเร็วล้อซ้าย/ขวา + เวลาหน่วง ตอน TurnLeft() (เลี้ยว q/Q)
 // TurnSpeedRight(l, r, delay);      // เหมือนกันแต่ TurnRight() (เลี้ยว e/E)
 // SetSensorTurnLeftRight(l, r);     // เซนเซอร์หน้าที่หยุดเลี้ยว TurnLeft (กวาด F[0..l]) / TurnRight (กวาด F[7..r])
-// SetSensorTurnLeftRight_B(l, r);   // เซนเซอร์หลังที่หยุดเลี้ยว TurnLeft_B (กวาด B[7..l]) / TurnRight_B (กวาด B[0..r])
 // TurnBackSpeedLeft(l, r, delay);   // เหมือน TurnSpeedLeft แต่ใช้ตอนถอยหลัง (TurnLeft_B)
 // TurnBackSpeedRight(l, r, delay);  // เหมือน TurnSpeedRight แต่ใช้ตอนถอยหลัง (TurnRight_B)
 // TurnSpeedLeftBackF(l, r, delay);  TurnSpeedRightBackF(l, r, delay);   // ตั้งค่าให้ TurnLeftBackF()/TurnRightBackF() (ถอยเลี้ยวล้อเดียว เช็คเซนเซอร์หน้า F[])
@@ -88,7 +86,6 @@
 // Set_KP_KD_Back(ch, kp, kd);       // ค่า PID (Kp, Kd) เดินตามเส้นตอนถอยหลัง ที่ช่วงความเร็ว ch
 // SetDelayBreak(ch, f, b);          // เวลาเบรก (ms) ตอนหยุดที่เส้น ที่ช่วงความเร็ว ch (f=เดินหน้า b=ถอยหลัง)
 // ตัวอย่าง: Set_KP_KD(SPD_60, 0.018, 0.20);  // ตั้ง Kp=0.018, Kd=0.20 ให้ความเร็วช่วง 60
-
 
 /* =====================================================
    7️⃣ ตารางคำสั่งเมื่อเจอแยก (select Command Table) — ฉบับละเอียด
@@ -153,7 +150,6 @@
  *                                 (ไม่ใช่ SetFG แบบตระกูล (A) และแม้แต่ TrackSelectGB ก็เรียก SetG(spd) ไม่ใช่ SetGB)
  */
 
-
 /* =====================================================
    🚗 LINE FOLLOW PID : FORWARD (ff)
    ===================================================== */
@@ -179,7 +175,6 @@
 // ffw(speed, 'คำสั่งทางแยก');
 // ffb(speed, 'คำสั่งทางแยก');
 
-
 /* =====================================================
    🔙 LINE FOLLOW PID : BACKWARD (bb)
    ===================================================== */
@@ -204,7 +199,6 @@
 // bbw(speed, 'คำสั่งทางแยก');
 // bbb(speed, 'คำสั่งทางแยก');
 
-
 /* =====================================================
    ⏱️ LINE FOLLOW PID : TIMER / DISTANCE
    ===================================================== */
@@ -222,7 +216,6 @@
 // bbcm(speed, cm);
 // ffcm(speed, cm, 'คำสั่งทางแยก');
 // bbcm(speed, cm, 'คำสั่งทางแยก');
-
 
 /* =====================================================
    🎯 CENTER ALIGNMENT (เข้ากึ่งกลางทางแยก)
@@ -255,7 +248,6 @@
 // TrackSelectF(speed, 'คำสั่งทางแยก');    // เดินหน้า (ตัวที่ ff/ffc/ffl/ffr ฯลฯ เรียกใช้ภายใน)
 // TrackSelectB(speed, 'คำสั่งทางแยก');    // ถอยหลัง (ตัวที่ bb/bbc/bbl/bbr ฯลฯ เรียกใช้ภายใน)
 
-
 /* =====================================================
    🔄 เลี้ยว / หมุน ด้วยเซนเซอร์เส้น
    ===================================================== */
@@ -267,7 +259,7 @@
 // TurnL / TurnR = เลี้ยวโค้ง (ล้อเดียวหมุน) ใช้ TurnSpeedLeft()/TurnSpeedRight() ที่ตั้งไว้
 // TurnLeft();      TurnRight();
 
-// ชุดเดียวกันแต่ใช้เซนเซอร์ฝั่งหลัง (ตอนถอยหลัง) — TurnLeft_B/TurnRight_B กวาด B[] ด้วยเช่นกัน (ควบคุมด้วย SetSensorTurnLeftRight_B)
+// ชุดเดียวกันแต่ใช้เซนเซอร์ฝั่งหลัง (ตอนถอยหลัง) — TurnLeft_B/TurnRight_B กวาด B[] ตามค่า SetSensorTurnLeftRight (นับจากฝั่งตรงข้ามของ B[])
 // spinl_B(speed);  spinr_B(speed);
 // spinl2_B(speed); spinr2_B(speed);
 // TurnLeft_B();    TurnRight_B();
@@ -275,7 +267,6 @@
 // เลี้ยวล้อเดียวแบบ "ถอยหลัง" (ตั้งค่าแยกด้วย TurnSpeed*BackF / TurnSpeed*BackB ใน Setting.ino — ไม่ใช่ SetSensorTurnLeftRight)
 // TurnLeftBackF();   TurnRightBackF();    // เช็คเส้นด้วยเซนเซอร์หน้า F[] (เลือกเซนเซอร์ตามความเร็วล้อ) ตอนจบเบรก+lf() ปรับเข้าเส้น
 // TurnLeftBackB();   TurnRightBackB();    // เช็คเส้นด้วยเซนเซอร์หลัง B[] (เลือกเซนเซอร์ตามความเร็วล้อ)
-
 
 /* =====================================================
    📡 IMU / GYROSCOPE COMMAND REFERENCE
@@ -350,7 +341,6 @@
 // rotatedegree(SpeedL, SpeedR, relative_degree, kp, kd);       // กำหนด kp/kd เอง
 // ตัวอย่าง: rotatedegree(60, 20, 90);   // โค้งขวา 90° ล้อซ้ายเร็วกว่าล้อขวา
 
-
 /* =====================================================
    🚀 การวิ่งตรง / ตามระยะ ด้วย Gyro (RunG แทน PIDF)
    ===================================================== */
@@ -374,7 +364,6 @@
 // ffdgs(speed, 'คำสั่งทางแยก', dist);         bbdgs(speed, 'คำสั่งทางแยก', dist);
 
 // ▶ ล็อกทิศสัมบูรณ์ระหว่างวิ่ง: เติมพารามิเตอร์ direction (0, 90, 180, 270, 360) ต่อท้ายสุดของฟังก์ชัน *g ได้ทุกตัว
-// ▶ ถอยหลัง (bb*g): direction = ทิศที่หุ่น "เคลื่อนที่ไป" เช่น bbcmg(speed, cm, 'p', 180) = ถอยไปทิศ 180 (หน้าหันทิศ 0)
 // fftimerg(speed, time, direction);            bbtimerg(speed, time, direction);
 // fftimerg(speed, time, 'select', direction);  bbtimerg(speed, time, 'select', direction);   // fftg/bbtg ก็มีรุ่นนี้
 // ffcmg(speed, cm, direction);                 bbcmg(speed, cm, direction);
@@ -394,7 +383,6 @@
 //    ใช้ 2 ตัวนี้เองเฉพาะกรณีเช็คเงื่อนไขเจอทางแยกเองแล้ว อยากสั่งเลี้ยว/หยุดต่อทันที)
 // TrackSelectG(speed, 'คำสั่งทางแยก');    // เดินหน้า
 // TrackSelectGB(speed, 'คำสั่งทางแยก');   // ถอยหลัง
-
 
 /* =====================================================
    🌀 Circle Motion Functions (วิ่งเบี่ยงซ้าย/ขวา)
@@ -445,7 +433,6 @@
      - ต้องตั้ง set_position_line_l()/set_position_line_r() ไว้ก่อน (ใน Setting.ino)
    ===================================================== */
 
-
 /* =====================================================
    🖐️ ARM & SERVO COMMANDS
    ===================================================== */
@@ -469,7 +456,6 @@
 // ค่าองศาที่ตั้งไว้: servo_down, servoL_open, servoR_open, readyL/readyR,
 //                    behindL/behindR, up, up45, closeL/closeR, closeBigL/closeBigR
 
-
 /* =====================================================
    👂 เซนเซอร์เส้น & คาลิเบรต
    ===================================================== */
@@ -488,7 +474,6 @@
 // Dottedline(0/1);                // 1=สนามมีเส้นประ
 // clampSensorValueF(min,max);   clampSensorValueB(min,max);   clampSensorValueC(min,max);
 // RefLineValue(x);   RefCenterLineValue(x);   SetAnalogDistance(pin);
-
 
 /* =====================================================
    ⚙️ มอเตอร์พื้นฐาน & การตั้งค่า PID
@@ -510,10 +495,10 @@
 // ตั้งค่า PID/ทางแยกอื่น ๆ (Setting.ino)
 // set_position_line(pos);   set_position_line_l(pos);   set_position_line_r(pos);
 // set_line_center(0/1);      SetToCenterSpeed(speed);
+// set_slow_kp_kd(kpf, kdf, kpb, kdb);
 // SetTurnSpeed(spd);          TurnSpeedLeft(l, r, delay);   TurnSpeedRight(l, r, delay);
 // ModeSpdPID(mode, max, min);
 // SetPIDDeadBand(db);         // ค่า error ต่ำกว่านี้มองเป็น 0 กันสั่น (ค่าเริ่มต้น 20)
-
 
 /* =====================================================
    🔔 เสียง
@@ -522,7 +507,6 @@
 // Beep(ms);   Beep2(freq, ms);   BZon();   BZoff();
 // beep(freq, dur);   blink(times);
 // BeepScanner();   // ปี๊บสั้นแหลมครั้งเดียว คล้ายเครื่องยิงบาร์โค้ด (= beep(3000, 80))
-
 
 /* =====================================================
    ⚠️ ข้อควรระวัง

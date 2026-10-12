@@ -85,7 +85,6 @@ int my_MCP3008s::SPIxADC(uint8_t channel, bool differential) {
     return 0x3FF & ((b0 & 0x01) << 9 | (b1 & 0xFF) << 1 | (b2 & 0x80) >> 7);
 
   } else {
-
     uint16_t outBuffer, inBuffer = 0;
 
     digitalWrite(cs, LOW);

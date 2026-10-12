@@ -9,47 +9,43 @@ float previous_errorG = 0;
 float previous_errorGB = 0;
 
 // ===== ตัวแปรปรับค่าไจโร (ปรับได้ด้วย SetGyroTurn / SetGyroSpin ใน Setting.ino) =====
-float gyro_Kp_Spin         = 0.9f;
-float gyro_Kd_Spin         = 0.6f;
-int   gyro_MaxSpd_Spin     = 30;
-int   gyro_MinSpd_Spin     = 10;
+float gyro_Kp_Spin = 0.9f;
+float gyro_Kd_Spin = 0.6f;
+int gyro_MaxSpd_Spin = 30;
+int gyro_MinSpd_Spin = 10;
 float gyro_SmallAngle_Spin = 10.0f;
-float gyro_StopThr_Spin    = 1.0f;
-float gyro_Kp_Turn         = 1.2f;
-float gyro_Kd_Turn         = 0.6f;
-int   gyro_MaxSpd_Turn     = 30;
-int   gyro_MinSpd_Turn     = 10;
+float gyro_StopThr_Spin = 1.0f;
+float gyro_Kp_Turn = 1.2f;
+float gyro_Kd_Turn = 0.6f;
+int gyro_MaxSpd_Turn = 30;
+int gyro_MinSpd_Turn = 10;
 float gyro_SmallAngle_Turn = 20.0f;
-float gyro_StopThr_Turn    = 1.0f;
-float gyro_StopThr_Rotate  = 1.0f;
+float gyro_StopThr_Turn = 1.0f;
+float gyro_StopThr_Rotate = 1.0f;
 
 void SetGyroTurn(float kp, float kd, int maxSpd, int minSpd, float smallAngle, float stopThr) {
-  gyro_Kp_Turn         = kp;
-  gyro_Kd_Turn         = kd;
-  gyro_MaxSpd_Turn     = maxSpd;
-  gyro_MinSpd_Turn     = minSpd;
+  gyro_Kp_Turn = kp;
+  gyro_Kd_Turn = kd;
+  gyro_MaxSpd_Turn = maxSpd;
+  gyro_MinSpd_Turn = minSpd;
   gyro_SmallAngle_Turn = smallAngle;
-  gyro_StopThr_Turn    = stopThr;
+  gyro_StopThr_Turn = stopThr;
 }
 
 void SetGyroSpin(float kp, float kd, int maxSpd, int minSpd, float smallAngle, float stopThr) {
-  gyro_Kp_Spin         = kp;
-  gyro_Kd_Spin         = kd;
-  gyro_MaxSpd_Spin     = maxSpd;
-  gyro_MinSpd_Spin     = minSpd;
+  gyro_Kp_Spin = kp;
+  gyro_Kd_Spin = kd;
+  gyro_MaxSpd_Spin = maxSpd;
+  gyro_MinSpd_Spin = minSpd;
   gyro_SmallAngle_Spin = smallAngle;
-  gyro_StopThr_Spin    = stopThr;
+  gyro_StopThr_Spin = stopThr;
 }
 
 /* ---------- sensor setup ---------- */
 
 void resetAngles() {
   my.resetAngles();
-  float sum = 0;
-  for (int i = 0; i < 5; i++) {
-    sum += my.gyro('z');
-  }
-  current_degree = sum / 5.0f;
+  current_degree = my.gyro('z');
   previous_errorG = 0;
   previous_errorGB = 0;
 }
@@ -152,13 +148,12 @@ void SetGB(int totalTime) {
 void spindegree(int Speed, int relative_degree) {
   int min_speed = gyro_MinSpd_Spin;
   int max_speed = Speed;
-  float kp = gyro_Kp_Spin;
-  float kd = gyro_Kd_Spin; // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
-  float small_angle_threshold = gyro_SmallAngle_Spin; // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
+  float kp = gyro_Kp_Spin;                             // เพิ่มจาก 0.9: เร่งแรงบิดตาม error ให้มากขึ้น
+  float kd = gyro_Kd_Spin;                             // เพิ่มจาก 0.35: ยังหมุนเกิน 90° อยู่ จึงเพิ่มแรงหน่วงตามอัตราหมุนให้มากขึ้นอีก
+  float small_angle_threshold = gyro_SmallAngle_Spin;  // ลดจาก 25: ช่วงคลานที่ min_speed แคบลง วิ่งเร็วได้นานขึ้นก่อนเข้าเบรก
   float stop_threshold = gyro_StopThr_Spin;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
-
   if (target_degree > 180.0f) target_degree -= 360.0f;
   if (target_degree < -180.0f) target_degree += 360.0f;
   current_degree = target_degree;
@@ -175,15 +170,17 @@ void spindegree(int Speed, int relative_degree) {
 
     if (error > stop_threshold && error < small_angle_threshold) {
       Motor(min_speed, -min_speed);
+      // Motor(-min_speed, min_speed);
     } else if (error < -stop_threshold && error > -small_angle_threshold) {
       Motor(-min_speed, min_speed);
+      // Motor(min_speed, -min_speed);
     } else if (error >= -stop_threshold && error <= stop_threshold) {
       MotorStop();
       break;
     } else {
       Motor(pd_value, -pd_value);
     }
-    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
+
     previous_error = error;
   }
 }
@@ -240,7 +237,6 @@ void turndegreeb(int Speed, int relative_degree) {
   float stop_threshold = gyro_StopThr_Turn;
   float previous_error = 0;
   float target_degree = gyroZ() + relative_degree;
-
   if (target_degree > 180.0f) target_degree -= 360.0f;
   if (target_degree < -180.0f) target_degree += 360.0f;
   current_degree = target_degree;
@@ -268,7 +264,7 @@ void turndegreeb(int Speed, int relative_degree) {
       if (error <= 0) Motor(pd_value, 1);
       else Motor(-1, -pd_value);
     }
-    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
+
     previous_error = error;
   }
   SetG(5);
@@ -305,7 +301,6 @@ void rotatedegree(int SpeedL, int SpeedR, int relative_degree, float kp, float k
 
     Motor(leftPow, rightPow);
     previous_error = error;
-    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
   }
   SetG(5);
 }
@@ -335,7 +330,6 @@ void turndegree_none(int Speed, int relative_degree) {
     } else {
       Motor(-1, Speed);
     }
-    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
   }
 }
 
@@ -360,12 +354,27 @@ void turndegreeb_none(int Speed, int relative_degree) {
     } else {
       Motor(-Speed, 1);
     }
-    delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นหมุนช้าลงและลดการสั่น
   }
 }
 
 void spindegree(int relative_degree) {
   spindegree(gyro_MaxSpd_Spin, relative_degree);
+}
+
+void turndegree(int relative_degree) {
+  turndegree(gyro_MaxSpd_Turn, relative_degree);
+}
+
+void turndegreeb(int relative_degree) {
+  turndegreeb(gyro_MaxSpd_Turn, relative_degree);
+}
+
+void turndegree_none(int relative_degree) {
+  turndegree_none(50, relative_degree);
+}
+
+void turndegreeb_none(int relative_degree) {
+  turndegreeb_none(50, relative_degree);
 }
 
 /* ---------- turn to absolute direction (อ้างอิงจากตอน resetAngles) เช่น 0, 90, 180, 270, 360 ---------- */
@@ -402,22 +411,6 @@ void turndirectionb(int direction) {
   turndirectionb(gyro_MaxSpd_Turn, direction);
 }
 
-void turndegree(int relative_degree) {
-  turndegree(gyro_MaxSpd_Turn, relative_degree);
-}
-
-void turndegreeb(int relative_degree) {
-  turndegreeb(gyro_MaxSpd_Turn, relative_degree);
-}
-
-void turndegree_none(int relative_degree) {
-  turndegree_none(50, relative_degree);
-}
-
-void turndegreeb_none(int relative_degree) {
-  turndegreeb_none(50, relative_degree);
-}
-
 void turndirection_none(int Speed, int direction) {
   turndegree_none(Speed, relativeToDirection(direction));
 }
@@ -427,28 +420,28 @@ void turndirectionb_none(int Speed, int direction) {
 }
 
 void turndirection_none(int direction) {
-  turndirection_none(30, direction);
+  turndirection_none(gyro_MaxSpd_Turn, direction);
 }
 
 void turndirectionb_none(int direction) {
-  turndirectionb_none(30, direction);
+  turndirectionb_none(gyro_MaxSpd_Turn, direction);
 }
 
 /* ---------- gyro-guided straight move ---------- */
 
-float kpG = 2.5;
-float kdG = 1.5;
-float kpGB = 2.5;
-float kdGB = 1.5;
+float run_Kp = 2.5;
+float run_Kd = 1.5;
+float run_Kpb = 2.5;
+float run_Kdb = 1.5;
 
 void SetGyroRun(float kp, float kd) {
-  kpG = kp;
-  kdG = kd;
+  run_Kp = kp;
+  run_Kd = kd;
 }
 
 void SetGyroRunB(float kp, float kd) {
-  kpGB = kp;
-  kdGB = kd;
+  run_Kpb = kp;
+  run_Kdb = kd;
 }
 
 // โหมดจำกัดกำลังมอเตอร์ของ RunG (เดินหน้า) / RunGB (ถอยหลัง) แยกจาก ModePidStatus ของ PID เส้น
@@ -522,7 +515,7 @@ void RunG(int SpeedL, int SpeedR) {
   else if (error < -180.0f) error += 360.0f;
 
   float derivative = error - previous_errorG;
-  int pd_value = (int)((error * kpG) + (derivative * kdG));
+  int pd_value = (int)((error * run_Kp) + (derivative * run_Kd));
   float leftPow = SpeedL + pd_value;
   float rightPow = SpeedR - pd_value;
 
@@ -530,7 +523,6 @@ void RunG(int SpeedL, int SpeedR) {
 
   Motor(leftPow, rightPow);
   previous_errorG = error;
-  delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นวิ่งช้าลงและลดการสั่น
 }
 
 void RunGB(int SpeedL, int SpeedR) {
@@ -538,7 +530,7 @@ void RunGB(int SpeedL, int SpeedR) {
   if (error > 180.0f) error -= 360.0f;
   else if (error < -180.0f) error += 360.0f;
   float derivative = error - previous_errorGB;
-  int pd_value = (int)((error * kpGB) + (derivative * kdGB));
+  int pd_value = (int)((error * run_Kpb) + (derivative * run_Kdb));
   float leftPow = SpeedL - pd_value;
   float rightPow = SpeedR + pd_value;
 
@@ -546,7 +538,6 @@ void RunGB(int SpeedL, int SpeedR) {
 
   Motor(-leftPow, -rightPow);
   previous_errorGB = error;
-  delayMicroseconds(80);  // เพิ่ม delay เพื่อให้หุ่นวิ่งช้าลงและลดการสั่น
 }
 
 void fftimerg(int Speed, int totalTime) {
@@ -608,7 +599,7 @@ void ffcmgs(int Speed, float distance) {
 
       if (traveled_distance >= distance) break;
     }
-    //delayMicroseconds(80);
+    delayMicroseconds(80);
   }
 }
 
@@ -918,43 +909,7 @@ void trlbg(int spd, int Angle, int Angle2) {
   turndegreeb(spd, abs(Angle2)); /*SetG(spd);*/
 }
 
-void ToCenterLG() {
-  BZon();
-  for (int i = 0; i < 20; i++) {
-    RunG(tctL, tctR);
-  }
-  while (1) {
-    RunG(tctL, tctR);
-    ReadCalibrateC();
-    if (C[CCL] >= RefC) {
-      Motor(-tct, -tct);
-      delay(break_fc);
-      MotorStop();
-      BZoff();
-      break;
-    }
-  }
-}
-
-void ToCenterRG() {
-  BZon();
-  for (int i = 0; i < 20; i++) {
-    RunG(tctL, tctR);
-  }
-  while (1) {
-    RunG(tctL, tctR);
-    ReadCalibrateC();
-    if (C[CCR] >= RefC) {
-      Motor(-tct, -tct);
-      delay(break_fc);
-      MotorStop();
-      BZoff();
-      break;
-    }
-  }
-}
-
-void ToCenterLRG() {
+void ToCenterG() {
   BZon();
   for (int i = 0; i < 20; i++) {
     RunG(tctL, tctR);
@@ -1012,18 +967,24 @@ void TrackSelectG(int spd, char select) {
   if (select == 'L') {
     spindegree(-90);
   } else if (select == 'l') {
-    ToCenterLRG();
+    ToCenterG();
     spindegree(-90);
   } else if (select == 'R') {
     spindegree(90);
   } else if (select == 'r') {
-    ToCenterLRG();
+    ToCenterG();
     spindegree(90);
-  } else if (select == 'q' || select == 'Q') {
+  } else if (select == 'q') {
     turndegree(-90);
-  } else if (select == 'e' || select == 'E') {
+  } else if (select == 'Q') {
+    ToFrontG();
+    turndegree(-90);
+  } else if (select == 'e') {
     turndegree(90);
-  } else if (select == 'p' || select == 'P') {
+  } else if (select == 'E') {
+    ToFrontG();
+    turndegree(90);
+  } else if (select == 'p') {
     BZon();
     ReadCalibrateF();
     while (1) {
@@ -1031,14 +992,28 @@ void TrackSelectG(int spd, char select) {
       ReadCalibrateF();
       if (F[0] < Ref && F[7] < Ref) break;
     }
-    fftimerg(spd, 5);
     while (1) {
       RunG(LeftBaseSpeed, RightBaseSpeed);
       ReadCalibrateF();
       if (F[0] < Ref && F[7] < Ref) break;
     }
     BZoff();
-  } else if (select == 'c' || select == 'C') {
+  } else if (select == 'P') {
+    ToFrontG();
+    BZon();
+    ReadCalibrateF();
+    while (1) {
+      RunG(LeftBaseSpeed, RightBaseSpeed);
+      ReadCalibrateF();
+      if (F[0] < Ref && F[7] < Ref) break;
+    }
+    while (1) {
+      RunG(LeftBaseSpeed, RightBaseSpeed);
+      ReadCalibrateF();
+      if (F[0] < Ref && F[7] < Ref) break;
+    }
+    BZoff();
+  } else if (select == 'c') {
     BZon();
     for (int i = 0; i < 20; i++) {
       RunG(LeftBaseSpeed, RightBaseSpeed);
@@ -1048,13 +1023,56 @@ void TrackSelectG(int spd, char select) {
       ReadCalibrateC();
       if (C[CCL] >= RefC || C[CCR] >= RefC) {
         Motor(-spd, -spd);
-        delay(tct_delay_break);
+        delay(delay_break_f);
         MotorStop();
         BZoff();
         break;
       }
     }
-  } else if (select == 'b' || select == 'B') {
+  } else if (select == 'C') {
+    ToFrontG();
+    BZon();
+    for (int i = 0; i < 20; i++) {
+      RunG(LeftBaseSpeed, RightBaseSpeed);
+    }
+    while (1) {
+      RunG(LeftBaseSpeed, RightBaseSpeed);
+      ReadCalibrateC();
+      if (C[CCL] >= RefC || C[CCR] >= RefC) {
+        Motor(-spd, -spd);
+        delay(delay_break_f);
+        MotorStop();
+        BZoff();
+        break;
+      }
+    }
+  } else if (select == 'b') {
+    BZon();
+    for (int i = 0; i < 20; i++) {
+      RunG(tctL, tctR);
+    }
+    while (1) {
+      RunG(tctL, tctR);
+      ReadCalibrateC();
+      if (C[CCL] >= RefC || C[CCR] >= RefC) {
+        break;
+      }
+    }
+    while (1) {
+      RunG(tctL, tctR);
+      ReadCalibrateB();
+      if ((B[0] > Ref || B[7] > Ref)) {
+        Motor(-tctL, -tctR);
+        delay(tct_delay_break);
+        Motor(-1, -1);
+        delay(1);
+        MotorStop();
+        BZoff();
+        break;
+      }
+    }
+  } else if (select == 'B') {
+    ToFrontG();
     BZon();
     for (int i = 0; i < 20; i++) {
       RunG(tctL, tctR);
@@ -1082,17 +1100,21 @@ void TrackSelectG(int spd, char select) {
   } else if (select == 's') {
     Motor(-spd, -spd);
     delay(delay_break_f);
+    Motor(-1, -1);
+    delay(1);
     MotorStop();
   } else if (select == 'S') {
     ToFrontG();
     Motor(-tctL, -tctR);
     delay(tct_delay_break);
+    Motor(-1, -1);
+    delay(1);
     MotorStop();
   } else if (select == 'G') {
     ToFrontG();
     SetG(tct_delay_break);
   } else {
-    SetG(spd);
+    SetG(100);
   }
 }
 
@@ -1107,11 +1129,17 @@ void TrackSelectGB(int spd, char select) {
   } else if (select == 'r') {
     BackCenterG();
     spindegree(90);
-  } else if (select == 'q' || select == 'Q') {
+  } else if (select == 'q') {
     turndegreeb(90);
-  } else if (select == 'e' || select == 'E') {
+  } else if (select == 'Q') {
+    ToBackG();
+    turndegreeb(90);
+  } else if (select == 'e') {
     turndegreeb(-90);
-  } else if (select == 'p' || select == 'P') {
+  } else if (select == 'E') {
+    ToBackG();
+    turndegreeb(-90);
+  } else if (select == 'p') {
     BZon();
     ReadCalibrateB();
     while (1) {
@@ -1119,14 +1147,28 @@ void TrackSelectGB(int spd, char select) {
       ReadCalibrateB();
       if (B[0] < Ref && B[7] < Ref) break;
     }
-    bbtimerg(spd, 5);
     while (1) {
       RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
       ReadCalibrateB();
       if (B[0] < Ref && B[7] < Ref) break;
     }
     BZoff();
-  } else if (select == 'c' || select == 'C') {
+  } else if (select == 'P') {
+    ToBackG();
+    BZon();
+    ReadCalibrateB();
+    while (1) {
+      RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
+      ReadCalibrateB();
+      if (B[0] < Ref && B[7] < Ref) break;
+    }
+    while (1) {
+      RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
+      ReadCalibrateB();
+      if (B[0] < Ref && B[7] < Ref) break;
+    }
+    BZoff();
+  } else if (select == 'c') {
     BZon();
     for (int i = 0; i < 20; i++) {
       RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
@@ -1142,7 +1184,50 @@ void TrackSelectGB(int spd, char select) {
         break;
       }
     }
-  } else if (select == 'b' || select == 'B') {
+  } else if (select == 'C') {
+    ToBackG();
+    BZon();
+    for (int i = 0; i < 20; i++) {
+      RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
+    }
+    while (1) {
+      RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
+      ReadCalibrateC();
+      if (C[CCL] >= RefC || C[CCR] >= RefC) {
+        Motor(spd, spd);
+        delay(delay_break_b);
+        MotorStop();
+        BZoff();
+        break;
+      }
+    }
+  } else if (select == 'b') {
+    BZon();
+    for (int i = 0; i < 20; i++) {
+      RunGB(bctL, bctR);
+    }
+    while (1) {
+      RunGB(bctL, bctR);
+      ReadCalibrateC();
+      if (C[CCL] >= RefC || C[CCR] >= RefC) {
+        break;
+      }
+    }
+    while (1) {
+      RunGB(bctL, bctR);
+      ReadCalibrateB();
+      if ((B[0] > Ref || B[7] > Ref)) {
+        Motor(bctL, bctR);
+        delay(bct_delay_break);
+        Motor(1, 1);
+        delay(1);
+        MotorStop();
+        BZoff();
+        break;
+      }
+    }
+  } else if (select == 'B') {
+    ToBackG();
     BZon();
     for (int i = 0; i < 20; i++) {
       RunGB(bctL, bctR);
@@ -1204,7 +1289,6 @@ void bbbg(int Speed, char select) {
   InitialSpeed();
   while (1) {
     RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
-
     ReadCalibrateB();
     if (B[1] > Ref || B[2] > Ref || B[3] > Ref || B[4] > Ref || B[5] > Ref || B[6] > Ref) break;
   }
@@ -1225,7 +1309,6 @@ void ffdg(int Speed, char select, float distance_cm) {
   InitialSpeed();
   while (1) {
     RunG(LeftBaseSpeed, RightBaseSpeed);
-
     if (analogRead(DIST) >= distance_cm) break;
   }
   TrackSelectG(Speed, select);
@@ -1236,7 +1319,6 @@ void bbdg(int Speed, char select, float distance_cm) {
   InitialSpeed();
   while (1) {
     RunGB(BackLeftBaseSpeed, BackRightBaseSpeed);
-
     if (analogRead(DIST) <= distance_cm) break;
   }
   TrackSelectGB(Speed, select);
@@ -1247,7 +1329,6 @@ void ffdgs(int Speed, char select, float distance_cm) {
   InitialSpeed();
   while (1) {
     RunG(LeftBaseSpeed, RightBaseSpeed);
-
     if (analogRead(DIST) >= distance_cm) break;
   }
   TrackSelectG(Speed, select);
@@ -1263,33 +1344,85 @@ void bbdgs(int Speed, char select, float distance_cm) {
   TrackSelectGB(Speed, select);
 }
 
-void fftimerg(int Speed, int totalTime, char select) { fftimerg(Speed, totalTime); TrackSelectG(Speed, select); }
-void bbtimerg(int Speed, int totalTime, char select) { bbtimerg(Speed, totalTime); TrackSelectGB(Speed, select); }
+void fftimerg(int Speed, int totalTime, char select) {
+  fftimerg(Speed, totalTime);
+  TrackSelectG(Speed, select);
+}
+void bbtimerg(int Speed, int totalTime, char select) {
+  bbtimerg(Speed, totalTime);
+  TrackSelectGB(Speed, select);
+}
 
-void fftg(int Speed, int totalTime, char select) { fftimerg(Speed, totalTime); TrackSelectG(Speed, select); }
-void bbtg(int Speed, int totalTime, char select) { bbtimerg(Speed, totalTime); TrackSelectGB(Speed, select); }
+void fftg(int Speed, int totalTime, char select) {
+  fftimerg(Speed, totalTime);
+  TrackSelectG(Speed, select);
+}
+void bbtg(int Speed, int totalTime, char select) {
+  bbtimerg(Speed, totalTime);
+  TrackSelectGB(Speed, select);
+}
 
-void ffcmgs(int Speed, float distance_cm, char select) { ffcmgs(Speed, distance_cm); TrackSelectG(Speed, select); }
-void bbcmgs(int Speed, float distance_cm, char select) { bbcmgs(Speed, distance_cm); TrackSelectGB(Speed, select); }
+void ffcmgs(int Speed, float distance_cm, char select) {
+  ffcmgs(Speed, distance_cm);
+  TrackSelectG(Speed, select);
+}
+void bbcmgs(int Speed, float distance_cm, char select) {
+  bbcmgs(Speed, distance_cm);
+  TrackSelectGB(Speed, select);
+}
 
-void ffcmg(int Speed, float distance_cm, char select) { ffcmg(Speed, distance_cm); TrackSelectG(Speed, select); }
-void bbcmg(int Speed, float distance_cm, char select) { bbcmg(Speed, distance_cm); TrackSelectGB(Speed, select); }
+void ffcmg(int Speed, float distance_cm, char select) {
+  ffcmg(Speed, distance_cm);
+  TrackSelectG(Speed, select);
+}
+void bbcmg(int Speed, float distance_cm, char select) {
+  bbcmg(Speed, distance_cm);
+  TrackSelectGB(Speed, select);
+}
+
+void setg(int time) {
+  SetG(time);
+}
+void setgb(int time) {
+  SetGB(time);
+}
 
 /* ---------- with select + absolute direction ---------- */
 
-void fftimerg(int Speed, int totalTime, char select, int direction) { fftimerg(Speed, totalTime, direction); TrackSelectG(Speed, select); }
-void bbtimerg(int Speed, int totalTime, char select, int direction) { bbtimerg(Speed, totalTime, direction); TrackSelectGB(Speed, select); }
+void fftimerg(int Speed, int totalTime, char select, int direction) {
+  fftimerg(Speed, totalTime, direction);
+  TrackSelectG(Speed, select);
+}
+void bbtimerg(int Speed, int totalTime, char select, int direction) {
+  bbtimerg(Speed, totalTime, direction);
+  TrackSelectGB(Speed, select);
+}
 
-void fftg(int Speed, int totalTime, char select, int direction) { fftimerg(Speed, totalTime, direction); TrackSelectG(Speed, select); }
-void bbtg(int Speed, int totalTime, char select, int direction) { bbtimerg(Speed, totalTime, direction); TrackSelectGB(Speed, select); }
+void fftg(int Speed, int totalTime, char select, int direction) {
+  fftimerg(Speed, totalTime, direction);
+  TrackSelectG(Speed, select);
+}
+void bbtg(int Speed, int totalTime, char select, int direction) {
+  bbtimerg(Speed, totalTime, direction);
+  TrackSelectGB(Speed, select);
+}
 
-void ffcmgs(int Speed, float distance_cm, char select, int direction) { ffcmgs(Speed, distance_cm, direction); TrackSelectG(Speed, select); }
-void bbcmgs(int Speed, float distance_cm, char select, int direction) { bbcmgs(Speed, distance_cm, direction); TrackSelectGB(Speed, select); }
+void ffcmgs(int Speed, float distance_cm, char select, int direction) {
+  ffcmgs(Speed, distance_cm, direction);
+  TrackSelectG(Speed, select);
+}
+void bbcmgs(int Speed, float distance_cm, char select, int direction) {
+  bbcmgs(Speed, distance_cm, direction);
+  TrackSelectGB(Speed, select);
+}
 
-void ffcmg(int Speed, float distance_cm, char select, int direction) { ffcmg(Speed, distance_cm, direction); TrackSelectG(Speed, select); }
-void bbcmg(int Speed, float distance_cm, char select, int direction) { bbcmg(Speed, distance_cm, direction); TrackSelectGB(Speed, select); }
+void ffcmg(int Speed, float distance_cm, char select, int direction) {
+  ffcmg(Speed, distance_cm, direction);
+  TrackSelectG(Speed, select);
+}
+void bbcmg(int Speed, float distance_cm, char select, int direction) {
+  bbcmg(Speed, distance_cm, direction);
+  TrackSelectGB(Speed, select);
+}
 
-void setg(int time) { SetG(time); }
-void setgb(int time) { SetGB(time); }
-
-#endif // MYRP_PICO2_MINI_GYRO_H
+#endif  // MYRP_PICO2_MINI_GYRO_H

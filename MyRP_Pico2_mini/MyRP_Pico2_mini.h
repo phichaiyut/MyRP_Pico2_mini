@@ -89,19 +89,23 @@ int ADC_i2c() {
 
     ADC01 = ((long)b1 << 16) | ((long)b2 << 8) | b3;
     if (b1 & 0x80) ADC01 |= 0xFF000000;  // sign-extend
+
+    adc_01 = map(ADC01, 524048, 282, 4000, 0);
+    return adc_01;
   }
-  adc_01 = map(ADC01, 524048, 282, 4000, 0);
-  return adc_01;
+
+  // คืนค่า 9999 หากไม่พบเซนเซอร์ เพื่อป้องกันไม่ให้เข้าเงื่อนไข < 2500
+  return 9999;
 }
 
 // ==================== sw() - เมนู Calibration + แสดงเซนเซอร์ ====================
 void sw() {
   MotorStop();
-  tone(9, 2000, 100);   // โด
+  tone(9, 2000, 100);  // โด
   delay(100);
-  tone(9, 2400, 100);   // เร
+  tone(9, 2400, 100);  // เร
   delay(100);
-  tone(9, 3000, 160);   // มี
+  tone(9, 3000, 160);  // มี
   delay(500);
   tone(9, 3000, 60);
   delay(80);
@@ -164,7 +168,8 @@ void sw() {
       delay(100);
       digitalWrite(LED_BUILTIN, LOW);
       delay(100);
-      while (digitalRead(2) == LOW);  // รอปล่อยปุ่ม
+      while (digitalRead(2) == LOW)
+        ;          // รอปล่อยปุ่ม
       delay(400);  // ป้องกันการเด้งของปุ่ม
     }
 
@@ -218,7 +223,8 @@ void sw() {
           delay(100);
           digitalWrite(LED_BUILTIN, LOW);
           delay(100);
-          while (digitalRead(2) == LOW);  // รอปล่อยปุ่ม
+          while (digitalRead(2) == LOW)
+            ;          // รอปล่อยปุ่ม
           delay(400);  // ป้องกันการเด้งของปุ่ม
         }
       }
@@ -242,4 +248,4 @@ void sw() {
   delay(500);
 }
 
-#endif // MYRP_PICO2_MINI_H
+#endif  // MYRP_PICO2_MINI_H

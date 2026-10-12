@@ -15,18 +15,17 @@ void Setting() {
 
   /******************** LINE CENTERING ********************/
   // set_line_center(0);        // เดินธรรมดา เข้ากลางหุ่น
-  set_line_center(1);                        // เดินตามเส้น เข้ากลางหุ่น
-  SetToCenterSpeed(20);                      // ความเร็วเข้ากลางหุ่น
-  set_brake_fc(10,30); // การเบรค ตอนเดินหน้า
-  set_brake_bc(10,30); // การเบรค ตอนถอยหลัง
+  set_line_center(1);    // เดินตามเส้น เข้ากลางหุ่น
+  SetToCenterSpeed(20);  // ความเร็วเข้ากลางหุ่น
+  set_brake_fc(10, 30);  // การเบรค ตอนเดินหน้า
+  set_brake_bc(10, 30);  // การเบรค ตอนถอยหลัง
 
   /******************** TURN & SPEED CONFIG ********************/
   SetTurnSpeed(50);  // ความเร็วเลี้ยวหุ่น (l L ) (r R)
 
-  TurnSpeedLeft(-25, 100, 60);   // เลี้ยวซ้าย (q Q)
-  TurnSpeedRight(100, -25, 60);  // เลี้ยวขวา (e E)
-  SetSensorTurnLeftRight(2, 5); // เซนเซอร์หน้าที่ใช้หยุดเลี้ยว (ซ้าย 0–7, ขวา 0–7) ของ TurnLeft/TurnRight
-  SetSensorTurnLeftRight_B(5, 2);  // เซนเซอร์หลังที่ใช้หยุดเลี้ยวของ TurnLeft_B (B[7..l]) / TurnRight_B (B[0..r])
+  TurnSpeedLeft(-15, 100, 60);   // เลี้ยวซ้าย (q Q)
+  TurnSpeedRight(100, -15, 60);  // เลี้ยวขวา (e E)
+  SetSensorTurnLeftRight(2, 5);  // เซนเซอร์หน้าที่ใช้หยุดเลี้ยว (ซ้าย 0–7, ขวา 0–7) ของ TurnLeft/TurnRight
 
   TurnBackSpeedLeft(-25, 100, 60);   // เลี้ยวซ้าย (q Q)
   TurnBackSpeedRight(100, -25, 60);  // เลี้ยวขวา (e E)
@@ -59,8 +58,8 @@ void Setting() {
 
   /******************** LINE POSITION ********************/
   set_position_line(2500);    // 0–5000 | 1000=ซ้าย 2500=กลาง 4000=ขวา
-  set_position_line_l(500);   // 0–5000 | วิ่งโค้งซ้าย
-  set_position_line_r(4500);  // 0–5000 | วิ่งโค้งขวา
+  set_position_line_l(1000);  // 0–5000 | วิ่งโค้งซ้าย
+  set_position_line_r(4000);  // 0–5000 | วิ่งโค้งขวา
 
   /******************** DISTANCE SENSOR ********************/
   SetAnalogDistance(28);  // A0–A3 เซนเซอร์ตรวจจับวัตถุ
@@ -94,15 +93,15 @@ void SetDelayBreakSpeed() {
   // หุ่นไถลเลยเส้น ให้เพิ่มค่า | หุ่นถอยกลับเลยเส้น ให้ลดค่า
   // SetDelayBreak(SPEED, เดินหน้า, ถอยหลัง);
 
-  SetDelayBreak(SPD_10,  30, 30);  // ความเร็ว 10
-  SetDelayBreak(SPD_20,  30, 30);  // ความเร็ว 20
-  SetDelayBreak(SPD_30,  30, 30);  // ความเร็ว 30
-  SetDelayBreak(SPD_40,  30, 30);  // ความเร็ว 40
-  SetDelayBreak(SPD_50,  30, 30);  // ความเร็ว 50
-  SetDelayBreak(SPD_60,  30, 30);  // ความเร็ว 60
-  SetDelayBreak(SPD_70,  30, 30);  // ความเร็ว 70
-  SetDelayBreak(SPD_80,  30, 30);  // ความเร็ว 80
-  SetDelayBreak(SPD_90,  30, 30);  // ความเร็ว 90
+  SetDelayBreak(SPD_10, 30, 30);   // ความเร็ว 10
+  SetDelayBreak(SPD_20, 30, 30);   // ความเร็ว 20
+  SetDelayBreak(SPD_30, 30, 30);   // ความเร็ว 30
+  SetDelayBreak(SPD_40, 30, 30);   // ความเร็ว 40
+  SetDelayBreak(SPD_50, 30, 30);   // ความเร็ว 50
+  SetDelayBreak(SPD_60, 30, 30);   // ความเร็ว 60
+  SetDelayBreak(SPD_70, 30, 30);   // ความเร็ว 70
+  SetDelayBreak(SPD_80, 30, 30);   // ความเร็ว 80
+  SetDelayBreak(SPD_90, 30, 30);   // ความเร็ว 90
   SetDelayBreak(SPD_100, 30, 30);  // ความเร็ว 100
 }
 
@@ -120,30 +119,30 @@ void SetKpKd() {
   // Set_KP_KD(SPD_90, 0.027, 0.27);   // ความเร็ว 90
   // Set_KP_KD(SPD_100, 0.030, 0.30);  // ความเร็ว 100
 
-  Set_KP_KD(SPD_10,  0.003, 0.03);  // ความเร็ว 10
-  Set_KP_KD(SPD_20,  0.008, 0.10);  // ความเร็ว 20
-  Set_KP_KD(SPD_30,  0.008, 0.10);  // ความเร็ว 30
-  Set_KP_KD(SPD_40,  0.012, 0.16);  // ความเร็ว 40
-  Set_KP_KD(SPD_50,  0.008, 0.12);  // ความเร็ว 50
-  Set_KP_KD(SPD_60,  0.012, 0.16);  // ความเร็ว 60
-  Set_KP_KD(SPD_70,  0.018, 0.20);  // ความเร็ว 70
-  Set_KP_KD(SPD_80,  0.020, 0.20);  // ความเร็ว 80
-  Set_KP_KD(SPD_90,  0.027, 0.27);  // ความเร็ว 90
+  Set_KP_KD(SPD_10, 0.003, 0.03);   // ความเร็ว 10
+  Set_KP_KD(SPD_20, 0.008, 0.10);   // ความเร็ว 20
+  Set_KP_KD(SPD_30, 0.008, 0.10);   // ความเร็ว 30
+  Set_KP_KD(SPD_40, 0.012, 0.16);   // ความเร็ว 40
+  Set_KP_KD(SPD_50, 0.008, 0.12);   // ความเร็ว 50
+  Set_KP_KD(SPD_60, 0.012, 0.16);   // ความเร็ว 60
+  Set_KP_KD(SPD_70, 0.018, 0.20);   // ความเร็ว 70
+  Set_KP_KD(SPD_80, 0.020, 0.20);   // ความเร็ว 80
+  Set_KP_KD(SPD_90, 0.027, 0.27);   // ความเร็ว 90
   Set_KP_KD(SPD_100, 0.030, 0.30);  // ความเร็ว 100
 }
 
 // ==================== PID ถอยหลัง ====================
 
 void SetKpKdBack() {
-  Set_KP_KD_Back(SPD_10,  0.005, 0.05);  // ความเร็ว 10
-  Set_KP_KD_Back(SPD_20,  0.009, 0.09);  // ความเร็ว 20
-  Set_KP_KD_Back(SPD_30,  0.011, 0.22);  // ความเร็ว 30
-  Set_KP_KD_Back(SPD_40,  0.014, 0.28);  // ความเร็ว 40
-  Set_KP_KD_Back(SPD_50,  0.018, 0.20);  // ความเร็ว 50
-  Set_KP_KD_Back(SPD_60,  0.014, 0.16);  // ความเร็ว 60
-  Set_KP_KD_Back(SPD_70,  0.023, 0.46);  // ความเร็ว 70
-  Set_KP_KD_Back(SPD_80,  0.028, 0.56);  // ความเร็ว 80
-  Set_KP_KD_Back(SPD_90,  0.031, 0.62);  // ความเร็ว 90
+  Set_KP_KD_Back(SPD_10, 0.005, 0.05);   // ความเร็ว 10
+  Set_KP_KD_Back(SPD_20, 0.009, 0.09);   // ความเร็ว 20
+  Set_KP_KD_Back(SPD_30, 0.011, 0.22);   // ความเร็ว 30
+  Set_KP_KD_Back(SPD_40, 0.014, 0.28);   // ความเร็ว 40
+  Set_KP_KD_Back(SPD_50, 0.018, 0.20);   // ความเร็ว 50
+  Set_KP_KD_Back(SPD_60, 0.014, 0.16);   // ความเร็ว 60
+  Set_KP_KD_Back(SPD_70, 0.023, 0.46);   // ความเร็ว 70
+  Set_KP_KD_Back(SPD_80, 0.028, 0.56);   // ความเร็ว 80
+  Set_KP_KD_Back(SPD_90, 0.031, 0.62);   // ความเร็ว 90
   Set_KP_KD_Back(SPD_100, 0.033, 0.66);  // ความเร็ว 100
 }
 
@@ -153,15 +152,15 @@ void SetBalanceSpeedForward() {
   // ข้างไหนแรงกว่า ให้เพิ่มค่าข้างนั้น
   // setBalanceSpeed(SPEED, LEFT, RIGHT);
 
-  setBalanceSpeed(SPD_10,  0, 0);  // ความเร็ว 10
-  setBalanceSpeed(SPD_20,  0, 0);  // ความเร็ว 20
-  setBalanceSpeed(SPD_30,  0, 0);  // ความเร็ว 30
-  setBalanceSpeed(SPD_40,  0, 0);  // ความเร็ว 40
-  setBalanceSpeed(SPD_50,  0, 0);  // ความเร็ว 50
-  setBalanceSpeed(SPD_60,  0, 0);  // ความเร็ว 60
-  setBalanceSpeed(SPD_70,  0, 0);  // ความเร็ว 70
-  setBalanceSpeed(SPD_80,  0, 0);  // ความเร็ว 80
-  setBalanceSpeed(SPD_90,  0, 0);  // ความเร็ว 90
+  setBalanceSpeed(SPD_10, 0, 0);   // ความเร็ว 10
+  setBalanceSpeed(SPD_20, 0, 0);   // ความเร็ว 20
+  setBalanceSpeed(SPD_30, 0, 0);   // ความเร็ว 30
+  setBalanceSpeed(SPD_40, 0, 0);   // ความเร็ว 40
+  setBalanceSpeed(SPD_50, 0, 0);   // ความเร็ว 50
+  setBalanceSpeed(SPD_60, 0, 0);   // ความเร็ว 60
+  setBalanceSpeed(SPD_70, 0, 0);   // ความเร็ว 70
+  setBalanceSpeed(SPD_80, 0, 0);   // ความเร็ว 80
+  setBalanceSpeed(SPD_90, 0, 0);   // ความเร็ว 90
   setBalanceSpeed(SPD_100, 0, 0);  // ความเร็ว 100
 }
 
@@ -171,14 +170,14 @@ void SetBalanceSpeedBackward() {
   // ข้างไหนแรงกว่า ให้เพิ่มค่าข้างนั้น
   // setBalanceBackSpeed(SPEED, LEFT, RIGHT);
 
-  setBalanceBackSpeed(SPD_10,  0, 0);  // ความเร็ว 10
-  setBalanceBackSpeed(SPD_20,  0, 0);  // ความเร็ว 20
-  setBalanceBackSpeed(SPD_30,  0, 0);  // ความเร็ว 30
-  setBalanceBackSpeed(SPD_40,  0, 0);  // ความเร็ว 40
-  setBalanceBackSpeed(SPD_50,  0, 0);  // ความเร็ว 50
-  setBalanceBackSpeed(SPD_60,  0, 0);  // ความเร็ว 60
-  setBalanceBackSpeed(SPD_70,  0, 0);  // ความเร็ว 70
-  setBalanceBackSpeed(SPD_80,  0, 0);  // ความเร็ว 80
-  setBalanceBackSpeed(SPD_90,  0, 0);  // ความเร็ว 90
+  setBalanceBackSpeed(SPD_10, 0, 0);   // ความเร็ว 10
+  setBalanceBackSpeed(SPD_20, 0, 0);   // ความเร็ว 20
+  setBalanceBackSpeed(SPD_30, 0, 0);   // ความเร็ว 30
+  setBalanceBackSpeed(SPD_40, 0, 0);   // ความเร็ว 40
+  setBalanceBackSpeed(SPD_50, 0, 0);   // ความเร็ว 50
+  setBalanceBackSpeed(SPD_60, 0, 0);   // ความเร็ว 60
+  setBalanceBackSpeed(SPD_70, 0, 0);   // ความเร็ว 70
+  setBalanceBackSpeed(SPD_80, 0, 0);   // ความเร็ว 80
+  setBalanceBackSpeed(SPD_90, 0, 0);   // ความเร็ว 90
   setBalanceBackSpeed(SPD_100, 0, 0);  // ความเร็ว 100
 }

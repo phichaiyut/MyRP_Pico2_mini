@@ -18,11 +18,11 @@ const uint16_t BatteryMonitor::ADC_CONFIG = 0x84C3;
 
 // Constructor
 BatteryMonitor::BatteryMonitor()
-  : _voltage(11.8f),
-    _rawVoltage(11.8f),
-    _lastUpdate(0),
-    _lastBuzz(0),
-    _debug(false) {
+    : _voltage(11.8f),
+      _rawVoltage(11.8f),
+      _lastUpdate(0),
+      _lastBuzz(0),
+      _debug(false) {
 }
 
 // เริ่มต้นใช้งาน

@@ -1,28 +1,28 @@
 #include "my_BMI160.h"
 
 // กำหนดค่าคงที่ static
-const float my_BMI160::GYRO_THRESHOLD     = 0.3f;
-const float my_BMI160::ALPHA              = 0.95f;
+const float my_BMI160::GYRO_THRESHOLD = 0.3f;
+const float my_BMI160::ALPHA = 0.95f;
 const float my_BMI160::ACCEL_FILTER_ALPHA = 0.1f;
 
 // Static variables
-unsigned long my_BMI160::_lastTime     = 0;
-float my_BMI160::_angleX               = 0.0f;
-float my_BMI160::_angleY               = 0.0f;
-float my_BMI160::_angleZ               = 0.0f;
-float my_BMI160::_gyroOffsetX          = 0.0f;
-float my_BMI160::_gyroOffsetY          = 0.0f;
-float my_BMI160::_gyroOffsetZ          = 0.0f;
-float my_BMI160::_accelX_prev          = 0.0f;
-float my_BMI160::_accelY_prev          = 0.0f;
-float my_BMI160::_accelZ_prev          = 0.0f;
+unsigned long my_BMI160::_lastTime = 0;
+float my_BMI160::_angleX = 0.0f;
+float my_BMI160::_angleY = 0.0f;
+float my_BMI160::_angleZ = 0.0f;
+float my_BMI160::_gyroOffsetX = 0.0f;
+float my_BMI160::_gyroOffsetY = 0.0f;
+float my_BMI160::_gyroOffsetZ = 0.0f;
+float my_BMI160::_accelX_prev = 0.0f;
+float my_BMI160::_accelY_prev = 0.0f;
+float my_BMI160::_accelZ_prev = 0.0f;
 
 // Constructor
 my_BMI160::my_BMI160(uint8_t address)
-  : _address(address), _wire(nullptr) {}
+    : _address(address), _wire(nullptr) {}
 
 // ตั้งค่า I2C bus
-void my_BMI160::setWire(TwoWire& wire) {
+void my_BMI160::setWire(TwoWire &wire) {
   _wire = &wire;
 }
 
@@ -109,7 +109,7 @@ void my_BMI160::readAngles(float &roll, float &pitch, float &yaw) {
   if (abs(gyroY) < GYRO_THRESHOLD) gyroY = 0.0f;
   if (abs(gyroZ) < GYRO_THRESHOLD) gyroZ = 0.0f;
 
-  float accelRoll  = atan2(accelY, accelZ) * 180.0f / PI;
+  float accelRoll = atan2(accelY, accelZ) * 180.0f / PI;
   float accelPitch = atan2(-accelX, sqrt(accelY * accelY + accelZ * accelZ)) * 180.0f / PI;
 
   unsigned long currentTime = micros();
@@ -125,21 +125,24 @@ void my_BMI160::readAngles(float &roll, float &pitch, float &yaw) {
   _angleY = ALPHA * gyroAngleY + (1.0f - ALPHA) * accelPitch;
   _angleZ = gyroAngleZ;
 
-  while (_angleZ > 180.0f)  _angleZ -= 360.0f;
+  while (_angleZ > 180.0f) _angleZ -= 360.0f;
   while (_angleZ < -180.0f) _angleZ += 360.0f;
 
-  roll  = _angleX;
+  roll = _angleX;
   pitch = _angleY;
-  yaw   = _angleZ;
+  yaw = _angleZ;
 }
 
 float my_BMI160::gyro(char axis) {
   float roll, pitch, yaw;
   readAngles(roll, pitch, yaw);
   switch (axis) {
-    case 'x': case 'X': return roll;
-    case 'y': case 'Y': return pitch;
-    case 'z': case 'Z': return yaw;
+    case 'x':
+    case 'X': return roll;
+    case 'y':
+    case 'Y': return pitch;
+    case 'z':
+    case 'Z': return yaw;
     default: return 0.0f;
   }
 }
@@ -196,9 +199,15 @@ bool my_BMI160::runGyroCalibration(int samples, bool checkVariance) {
     float aX = ax / 16384.0f;
     float aY = ay / 16384.0f;
     float aZ = az / 16384.0f;
-    sumX += gX; sumY += gY; sumZ += gZ;
-    sumAX += aX; sumAY += aY; sumAZ += aZ;
-    varX += gX * gX; varY += gY * gY; varZ += gZ * gZ;
+    sumX += gX;
+    sumY += gY;
+    sumZ += gZ;
+    sumAX += aX;
+    sumAY += aY;
+    sumAZ += aZ;
+    varX += gX * gX;
+    varY += gY * gY;
+    varZ += gZ * gZ;
     delay(2);
   }
 
@@ -238,6 +247,6 @@ void my_BMI160::recalibrate() {
   runGyroCalibration(50, false);
 }
 
-void reset_gyro160(my_BMI160& gyro) {
+void reset_gyro160(my_BMI160 &gyro) {
   gyro.resetAngles();
 }
