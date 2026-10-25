@@ -1,8 +1,34 @@
 #ifndef MYRP_PICO2_MINI_PID_H
 #define MYRP_PICO2_MINI_PID_H
 
-int LastError_F, LastError_B;
-int LastError_F_none, LastError_B_none;
+/*
+ * MyRP_Pico2_mini_PID.h
+ * เดินตามเส้นด้วย PID, เลี้ยว/หมุนด้วยเซนเซอร์ และคำสั่งทางแยก
+ *
+ * สารบัญ:
+ *   [1] ตัวแปรและค่าเริ่มต้น
+ *   [2] ฟังก์ชันตั้งค่า (Config)
+ *   [3] อ่านตำแหน่งเส้น (readPosition)
+ *   [4] PID เดินตามเส้น (PIDF / PIDB)
+ *   [5] เดินตามเวลา / ระยะทาง (fftimer, ffcm, lf, lb)
+ *   [6] เข้ากลางหุ่น / ชิดเส้น (ToCenter, ToFront, ToBack)
+ *   [7] เลี้ยว / หมุน ด้วยเซนเซอร์หน้า
+ *   [8] เลี้ยว / หมุน ด้วยเซนเซอร์หลัง
+ *   [9] ทางแยก (TrackSelectF / TrackSelectB)
+ *   [10] เดินตามเวลา / ระยะทาง + ทางแยก
+ *   [11] เดินตามเส้นจนเจอแยก (ff, bb, ffl, ffr, ffb, ffw ...)
+ *   [12] หยุดตามระยะเซนเซอร์ (ff_distances)
+ *   [13] ออกจากจุดเริ่ม / เข้าจุดจบ (gostart / goend)
+ *   [14] ตั้งหุ่นตรงเส้น (balance / set)
+ *   [15] Serial debug ตำแหน่งเส้น
+ *   [16] วิ่งโค้ง (CL / CR: เบี่ยงซ้าย/ขวา ด้วย set_positionL/R ชั่วคราว)
+ */
+
+// ======================================================================
+// [1] ตัวแปรและค่าเริ่มต้น
+// ======================================================================
+
+// LastError_F / LastError_B / LastError_F_none / LastError_B_none ประกาศไว้ใน Motor.h (InitialSpeed() รีเซ็ตค่า)
 int tct, bct, tspd;
 int tctL, tctR, bctL, bctR;
 int LTurnSpdL, LTurnSpdR, TurnDelayL;
@@ -14,41 +40,36 @@ int RTurnBackFSpdL, RTurnBackFSpdR, TurnBackFDelayR;
 int LTurnBackBSpdL, LTurnBackBSpdR, TurnBackBDelayL;
 int RTurnBackBSpdL, RTurnBackBSpdR, TurnBackBDelayR;
 int LChTurn = 2, RChTurn = 5;
+int LChTurnB = 5, RChTurnB = 2;  // ดัชนี B[] ของ TurnLeftB (B[7..l]) / TurnRightB (B[0..r])
 int tct_delay_break = 0;
 int bct_delay_break = 0;
 int break_ff = 5, break_fc = 30, break_bf = 10, break_bc = 20;  // การหน่วง
 int set_position = 2500;
-// int set_position = 3500;
-int set_positionL = 500;
-// int set_positionL = 1500;
-int set_positionR = 4500;
-// int set_positionR = 5500;
+
+int set_positionL = 1000;
+
+int set_positionR = 4000;
 float slow_kp_f = 0.005, slow_kd_f = 0.05;
 float slow_kp_b = 0.005, slow_kd_b = 0.05;
-float slow_kpf = 0.005, slow_kdf = 0.05;
-float slow_kpb = 0.005, slow_kdb = 0.05;
+float lf_kp = 0.015, lf_kd = 0.10;  // PID อยู่กับที่ lf()
+float lb_kp = 0.015, lb_kd = 0.10;  // PID อยู่กับที่ lb()
 int line_centor = 0;
 
 int MaxSpeed = 100;
-int MinSpeed = -5;
+int MinSpeed = -100;
 int ModePidStatus = 0;
+int pid_mode2_up = 20, pid_mode2_down = 20;  // ModePidStatus 2: ช่วงกำลังล้อ = -(Speed+down)..(Speed+up)
 int dottedline = 0;
 
-// ค่า Error ที่เล็กกว่านี้ (หน่วยเดียวกับ set_position, 0-5000) จะถูกมองเป็น 0
-// เพื่อกันไม่ให้ PID สั่นตามสัญญาณรบกวนตอนวิ่งตรงกลางเส้น
-int PID_DeadBand = 20;
+float speed_scale_ff = 1.75;  // <-- ใช้ค่าที่คำนวณจากการวัดจริง
+float speed_scale_bb = 1.75;  // <-- ใช้ค่าที่คำนวณจากการวัดจริง
 
-void SetPIDDeadBand(int db) {
-  PID_DeadBand = db;
-}
+// ======================================================================
+// [2] ฟังก์ชันตั้งค่า (Config)
+// ======================================================================
 
-// จำนวนครั้งที่ต้องอ่านค่าซ้ำ ๆ ให้ผลตรงกันติดต่อกัน ก่อนจะยอมรับว่า
-// "พ้นเส้นเดิม" หรือ "เจอเส้นใหม่" แล้วจริง ๆ (กันสัญญาณรบกวนที่ขอบเส้นทำให้
-// spinl()/spinr() หยุดเร็วเกินไปโดยยังไม่พ้นเส้นเดิม)
-int SpinDebounceCount = 5;
-
-// ---------- Config ----------
 void SetFG(int time);
+void SetBG(int time);
 void SetRobotAngle();
 
 void SetToCenterSpeed(int tctv) {
@@ -72,13 +93,6 @@ void SetToCenterSpeed(int tctv) {
   bct_delay_break = delay_break_b;
 }
 
-void set_slow_kp_kd(float kp_f, float kd_f, float kp_b, float kd_b) {
-  slow_kp_f = kp_f;
-  slow_kd_f = kd_f;
-  slow_kp_b = kp_b;
-  slow_kd_b = kd_b;
-}
-
 void Dottedline(int x) {
   dottedline = x;
 }
@@ -86,6 +100,12 @@ void Dottedline(int x) {
 void SetSensorTurnLeftRight(int l, int r) {
   LChTurn = l;
   RChTurn = r;
+}
+
+// เซนเซอร์หลังที่ใช้หยุดเลี้ยว: TurnLeftB ไล่ B[7] ลงมาถึง B[l], TurnRightB ไล่ B[0] ขึ้นไปถึง B[r]
+void SetSensorTurnLeftRightB(int l, int r) {
+  LChTurnB = l;
+  RChTurnB = r;
 }
 
 void SetTurnSpeed(int tspdv) {
@@ -160,11 +180,16 @@ void ModeSpdPID(int moD, int maX, int miN) {
   MinSpeed = miN;
 }
 
+void set_pid_mode2_limit(int up, int down) {
+  pid_mode2_up = up;
+  pid_mode2_down = down;
+}
+
 void set_position_line(int _pos) {
   if (_pos < 0) {
     set_position = 0;
-  } else if (_pos > 7000) {
-    set_position = 7000;
+  } else if (_pos > 5000) {
+    set_position = 5000;
   } else {
     set_position = _pos;
   }
@@ -173,8 +198,8 @@ void set_position_line(int _pos) {
 void set_position_line_l(int _pos) {
   if (_pos < 0) {
     set_positionL = 0;
-  } else if (_pos > 7000) {
-    set_positionL = 7000;
+  } else if (_pos > 5000) {
+    set_positionL = 5000;
   } else {
     set_positionL = _pos;
   }
@@ -183,35 +208,45 @@ void set_position_line_l(int _pos) {
 void set_position_line_r(int _pos) {
   if (_pos < 0) {
     set_positionR = 0;
-  } else if (_pos > 7000) {
-    set_positionR = 7000;
+  } else if (_pos > 5000) {
+    set_positionR = 5000;
   } else {
     set_positionR = _pos;
   }
-}
-
-// หมายเหตุ: เดิมเก็บค่า L/R ไว้ในตัวแปร setsensortracklineL/R แต่ไม่มีจุดใดใน
-// ไลบรารีอ่านค่ากลับไปใช้เลย (เขียนอย่างเดียว ไม่มีผลต่อพฤติกรรมใด ๆ) จึงตัด
-// ตัวแปรที่ไม่ได้ใช้งานทิ้ง และคงฟังก์ชันนี้ไว้เฉยๆ เพื่อไม่ให้สเก็ตช์เดิมที่เรียกใช้พัง
-void set_sensor_track_line(int L, int R) {
 }
 
 void set_line_center(int x) {
   line_centor = x;
 }
 
-// ---------- Position Reading ----------
+void set_speed_scale(float fw, float bw) {
+  speed_scale_ff = fw;
+  speed_scale_bb = bw;
+}
+
+void set_pid_lf(float Kp, float Kd) {
+  lf_kp = Kp;
+  lf_kd = Kd;
+}
+
+void set_pid_lb(float Kp, float Kd) {
+  lb_kp = Kp;
+  lb_kd = Kd;
+}
+
+// ======================================================================
+// [3] อ่านตำแหน่งเส้น (readPosition)
+// ======================================================================
 
 int readPositionF(int Track, int noise) {
-  unsigned char i, online = 0;
+  bool online = false;
   unsigned long avg = 0;
   unsigned long sum = 0;
   static int last_value = ((6 - 1) * 1000) / 2;
   ReadCalibrateF();
-  int S[6] = { F[1], F[2], F[3], F[4], F[5], F[6] };
-  for (i = 0; i < 6; i++) {
-    int values = S[i];
-    if (values > Track) online = 1;
+  for (int i = 0; i < 6; i++) {
+    int values = F[i + 1];  // ใช้เฉพาะ F[1]..F[6] (ไม่ต้องคัดลอกลงอาร์เรย์ชั่วคราว)
+    if (values > Track) online = true;
     if (values > noise) {
       avg += (long)(values) * (i * 1000L);
       sum += values;
@@ -229,15 +264,14 @@ int readPositionF(int Track, int noise) {
 }
 
 int readPositionB(int Track, int noise) {
-  unsigned char i, online = 0;
+  bool online = false;
   unsigned long avg = 0;
   unsigned long sum = 0;
   static int last_value = ((6 - 1) * 1000) / 2;
   ReadCalibrateB();
-  int S[6] = { B[1], B[2], B[3], B[4], B[5], B[6] };
-  for (i = 0; i < 6; i++) {
-    int values = S[i];
-    if (values > Track) online = 1;
+  for (int i = 0; i < 6; i++) {
+    int values = B[i + 1];  // ใช้เฉพาะ B[1]..B[6] (ไม่ต้องคัดลอกลงอาร์เรย์ชั่วคราว)
+    if (values > Track) online = true;
     if (values > noise) {
       avg += (long)(values) * (i * 1000L);
       sum += values;
@@ -255,15 +289,14 @@ int readPositionB(int Track, int noise) {
 }
 
 int readPositionF_none(int Track, int noise) {
-  unsigned char i, online = 0;
+  bool online = false;
   unsigned long avg = 0;
   unsigned long sum = 0;
   static int last_value = ((6 - 1) * 1000) / 2;
   ReadCalibrateF();
-  int S[6] = { F[1], F[2], F[3], F[4], F[5], F[6] };
-  for (i = 0; i < 6; i++) {
-    int values = S[i];
-    if (values > Track) online = 1;
+  for (int i = 0; i < 6; i++) {
+    int values = F[i + 1];  // ใช้เฉพาะ F[1]..F[6] (ไม่ต้องคัดลอกลงอาร์เรย์ชั่วคราว)
+    if (values > Track) online = true;
     if (values > noise) {
       avg += (long)(values) * (i * 1000L);
       sum += values;
@@ -281,15 +314,14 @@ int readPositionF_none(int Track, int noise) {
 }
 
 int readPositionB_none(int Track, int noise) {
-  unsigned char i, online = 0;
+  bool online = false;
   unsigned long avg = 0;
   unsigned long sum = 0;
   static int last_value = ((6 - 1) * 1000) / 2;
   ReadCalibrateB();
-  int S[6] = { B[1], B[2], B[3], B[4], B[5], B[6] };
-  for (i = 0; i < 6; i++) {
-    int values = S[i];
-    if (values > Track) online = 1;
+  for (int i = 0; i < 6; i++) {
+    int values = B[i + 1];  // ใช้เฉพาะ B[1]..B[6] (ไม่ต้องคัดลอกลงอาร์เรย์ชั่วคราว)
+    if (values > Track) online = true;
     if (values > noise) {
       avg += (long)(values) * (i * 1000L);
       sum += values;
@@ -303,7 +335,9 @@ int readPositionB_none(int Track, int noise) {
   return last_value;
 }
 
-// ---------- PID ----------
+// ======================================================================
+// [4] PID เดินตามเส้น (PIDF / PIDB)
+// ======================================================================
 
 // จำกัดค่า LeftPower/RightPower ตาม ModePidStatus (ใช้ร่วมกันทั้ง PIDF และ PIDB)
 void ClampPIDPower(float &LeftPower, float &RightPower, int SpeedL, int SpeedR) {
@@ -321,10 +355,10 @@ void ClampPIDPower(float &LeftPower, float &RightPower, int SpeedL, int SpeedR) 
       if (RightPower < MinSpeed) RightPower = MinSpeed;
       break;
     case 2:
-      if (LeftPower > SpeedL) LeftPower = SpeedL;
-      if (LeftPower < -SpeedL) LeftPower = -SpeedL;
-      if (RightPower > SpeedR) RightPower = SpeedR;
-      if (RightPower < -SpeedR) RightPower = -SpeedR;
+      if (LeftPower > SpeedL + pid_mode2_up) LeftPower = SpeedL + pid_mode2_up;
+      if (LeftPower < -SpeedL - pid_mode2_down) LeftPower = -SpeedL - pid_mode2_down;
+      if (RightPower > SpeedR + pid_mode2_up) RightPower = SpeedR + pid_mode2_up;
+      if (RightPower < -SpeedR - pid_mode2_down) RightPower = -SpeedR - pid_mode2_down;
       break;
     case 3:
       if (LeftPower > MaxSpeed) LeftPower = MaxSpeed;
@@ -343,7 +377,6 @@ void ClampPIDPower(float &LeftPower, float &RightPower, int SpeedL, int SpeedR) 
 void PIDF(int SpeedL, int SpeedR, float Kp, float Kd) {
   float Pos = readPositionF(200, 50);
   float Error = Pos - set_position;
-  if (fabs(Error) < PID_DeadBand) Error = 0;
   float PID_Value = (Kp * Error) + (Kd * (Error - LastError_F));
   LastError_F = Error;
   float LeftPower = SpeedL + PID_Value;
@@ -355,7 +388,6 @@ void PIDF(int SpeedL, int SpeedR, float Kp, float Kd) {
 void PIDB(int SpeedL, int SpeedR, float Kp, float Kd) {
   float Pos = readPositionB(200, 50);
   float Error = Pos - set_position;
-  if (fabs(Error) < PID_DeadBand) Error = 0;
   float PID_Value = (Kp * Error) + (Kd * (Error - LastError_B));
   LastError_B = Error;
   float LeftPower = SpeedL + PID_Value;
@@ -416,75 +448,106 @@ void PIDB_none(int SpeedL, int SpeedR, float Kp, float Kd) {
   Motor(-LeftPower, -RightPower);
 }
 
-// ---------- Timed Motion ----------
+// ======================================================================
+// [5] เดินตามเวลา / ระยะทาง (fftimer, ffcm, lf, lb)
+// ======================================================================
 
-void fftimer(int baseSpeed, int totalTime) {
+// Kp / Kd ติดลบ = ใช้ค่าจากตารางความเร็ว (PID_KP_Front / PID_KD_Front)
+static void fftimer_pid(int baseSpeed, int totalTime, float Kp, float Kd) {
   BaseSpeed = baseSpeed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   unsigned long endTime = millis() + totalTime;
-  while (millis() <= endTime) PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
+  while (millis() <= endTime) PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
+}
+
+void fftimer(int baseSpeed, int totalTime) {
+  fftimer_pid(baseSpeed, totalTime, -1, -1);
+}
+
+// Kp / Kd ติดลบ = ใช้ค่าจากตารางความเร็ว (PID_KP_Back / PID_KD_Back)
+static void bbtimer_pid(int baseSpeed, int totalTime, float Kp, float Kd) {
+  BaseSpeed = baseSpeed;
+  InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
+  unsigned long endTime = millis() + totalTime;
+  while (millis() <= endTime) PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
 }
 
 void bbtimer(int baseSpeed, int totalTime) {
-  BaseSpeed = baseSpeed;
-  InitialSpeed();
-  unsigned long endTime = millis() + totalTime;
-  while (millis() <= endTime) PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
+  bbtimer_pid(baseSpeed, totalTime, -1, -1);
 }
 
 void lf(int totalTime) {
   unsigned long endTime = millis() + totalTime;
-  while (millis() <= endTime) PIDF(0, 0, 0.015, 0.10);
+  while (millis() <= endTime) PIDF(0, 0, lf_kp, lf_kd);
   MotorStop();
 }
 
 void lb(int totalTime) {
   unsigned long endTime = millis() + totalTime;
-  while (millis() <= endTime) PIDB(0, 0, 0.015, 0.10);
+  while (millis() <= endTime) PIDB(0, 0, lb_kp, lb_kd);
   MotorStop();
 }
 
-void ffcm(int Speed, float distance) {
+// Kp / Kd ติดลบ = ใช้ค่าจากตารางความเร็ว (PID_KP_Front / PID_KD_Front)
+static void ffcm_pid(int Speed, float distance, float Kp, float Kd) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   int target_speed = min(LeftBaseSpeed, RightBaseSpeed);
   float traveled_distance = 0;
   unsigned long last_time = millis();
-  float speed_scale = 1.75;  // <-- ใช้ค่าที่คำนวณจากการวัดจริง
   while (1) {
     if (distance > 0) {
       unsigned long current_time = millis();
-      float delta_time = (current_time - last_time) / 1000.0;
-      traveled_distance += (target_speed * speed_scale) * delta_time;
+      float delta_time = (current_time - last_time) / 1000.0f;
+      traveled_distance += (target_speed * speed_scale_ff) * delta_time;
       last_time = current_time;
 
       if (traveled_distance >= distance) break;
     }
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
+  }
+}
+
+void ffcm(int Speed, float distance) {
+  ffcm_pid(Speed, distance, -1, -1);
+}
+
+// Kp / Kd ติดลบ = ใช้ค่าจากตารางความเร็ว (PID_KP_Back / PID_KD_Back)
+static void bbcm_pid(int Speed, float distance, float Kp, float Kd) {
+  BaseSpeed = Speed;
+  InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
+  int target_speed = min(BackLeftBaseSpeed, BackRightBaseSpeed);
+  float traveled_distance = 0;
+  unsigned long last_time = millis();
+  while (1) {
+    if (distance > 0) {
+      unsigned long current_time = millis();
+      float delta_time = (current_time - last_time) / 1000.0f;
+      traveled_distance += (target_speed * speed_scale_bb) * delta_time;
+      last_time = current_time;
+
+      if (traveled_distance >= distance) break;
+    }
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
   }
 }
 
 void bbcm(int Speed, float distance) {
-  BaseSpeed = Speed;
-  InitialSpeed();
-  int target_speed = min(BackLeftBaseSpeed, BackRightBaseSpeed);
-  float traveled_distance = 0;
-  unsigned long last_time = millis();
-  float speed_scale = 1.75;  // <-- ใช้ค่าที่คำนวณจากการวัดจริง
-  while (1) {
-    if (distance > 0) {
-      unsigned long current_time = millis();
-      float delta_time = (current_time - last_time) / 1000.0;
-      traveled_distance += (target_speed * speed_scale) * delta_time;
-      last_time = current_time;
-
-      if (traveled_distance >= distance) break;
-    }
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-  }
+  bbcm_pid(Speed, distance, -1, -1);
 }
 
-// ---------- ToCenter / BackCenter ----------
+// ======================================================================
+// [6] เข้ากลางหุ่น / ชิดเส้น (ToCenter, ToFront, ToBack)
+// ======================================================================
+
 void ModeToCenter() {
   if (line_centor == 0) {
     Motor(tctL, tctR);
@@ -539,38 +602,6 @@ void ToCenter() {
   }
 }
 
-void ToCenterL() {
-  BZon();
-  ModeToCenter();
-  while (1) {
-    ModeToCenterLine();
-    ReadCalibrateC();
-    if (C[CCL] >= RefC) {
-      Motor(-tctL, -tctR);
-      delay(break_fc);
-      MotorStop();
-      BZoff();
-      break;
-    }
-  }
-}
-
-void ToCenterR() {
-  BZon();
-  ModeToCenter();
-  while (1) {
-    ModeToCenterLine();
-    ReadCalibrateC();
-    if (C[CCR] >= RefC) {
-      Motor(-tctL, -tctR);
-      delay(break_fc);
-      MotorStop();
-      BZoff();
-      break;
-    }
-  }
-}
-
 void BackCenter() {
   BZon();
   ModeToCenterBack();
@@ -590,7 +621,6 @@ void BackCenter() {
 void ToFront() {
   while (1) {
     PIDF(tctL, tctR, slow_kp_f, slow_kd_f);
-    ReadCalibrateF();
     if (F[0] > Ref || F[7] > Ref) break;
   }
 }
@@ -598,21 +628,22 @@ void ToFront() {
 void ToBack() {
   while (1) {
     PIDB(bctL, bctR, slow_kp_b, slow_kd_b);
-    ReadCalibrateB();
     if (B[0] > Ref || B[7] > Ref) break;
   }
 }
 
-// ---------- Turns / Spins ----------
+// ======================================================================
+// [7] เลี้ยว / หมุน ด้วยเซนเซอร์หน้า
+// ======================================================================
 
 void TurnLeft() {
-  // Motor(LTurnSpdL, LTurnSpdR);
-  // delay(TurnDelayL);
-  // while (1) {
-  //   Motor(LTurnSpdL, LTurnSpdR);
-  //   ReadCalibrateF();
-  //   if (F[2] >= Ref) break;
-  // }
+  for (int i = 0; i <= 1; i++) {
+    do {
+      Motor(LTurnSpdL, LTurnSpdR);
+      delayMicroseconds(80);
+      ReadCalibrateF();
+    } while (F[i] >= Ref);
+  }
   for (int i = 0; i <= LChTurn; i++) {
     do {
       Motor(LTurnSpdL, LTurnSpdR);
@@ -623,8 +654,13 @@ void TurnLeft() {
 }
 
 void TurnRight() {
-  // Motor(RTurnSpdL, RTurnSpdR);
-  // delay(TurnDelayR);
+  for (int i = 7; i >= 6; i--) {
+    do {
+      Motor(RTurnSpdL, RTurnSpdR);
+      delayMicroseconds(80);
+      ReadCalibrateF();
+    } while (F[i] >= Ref);
+  }
   for (int i = 7; i >= RChTurn; i--) {
     do {
       Motor(RTurnSpdL, RTurnSpdR);
@@ -634,8 +670,8 @@ void TurnRight() {
   }
 }
 
-// เลี้ยวล้อเดียวแบบถอยหลัง เช็คเส้นด้วยเซนเซอร์หน้า F[] (ต่างจาก TurnLeft_B()/
-// TurnRight_B() ที่เปลี่ยนไปใช้เซนเซอร์หลัง B[]) ตั้งความเร็ว/ดีเลย์แยกต่างหากจาก
+// เลี้ยวล้อเดียวแบบถอยหลัง เช็คเส้นด้วยเซนเซอร์หน้า F[] (ต่างจาก TurnLeftB()/
+// TurnRightB() ที่เปลี่ยนไปใช้เซนเซอร์หลัง B[]) ตั้งความเร็ว/ดีเลย์แยกต่างหากจาก
 // TurnLeft()/TurnRight() ผ่าน TurnSpeedLeftBackF()/TurnSpeedRightBackF()
 // (ให้ล้อฝั่งที่ไม่ต้องการหมุน = 0 เพื่อให้เป็นการเลี้ยวล้อเดียว)
 void TurnLeftBackF() {
@@ -665,9 +701,8 @@ void TurnRightBackF() {
   // mirror ของ TurnLeftBackF() ไปฝั่งขวา (F[2]<->F[5], F[1]<->F[6], F[3]<->F[4])
   int spd = max(abs(RTurnBackFSpdL), abs(RTurnBackFSpdR));
   int sensorIdx;
-  if (spd >= 80) sensorIdx = 1;
-  else if (spd <= 50) sensorIdx = 3;
-  else if (spd <= 70) sensorIdx = 2;
+  if (spd <= 50) sensorIdx = 3;
+  else if (spd <= 60) sensorIdx = 2;
   else sensorIdx = 6;
 
   Motor(RTurnBackFSpdL, RTurnBackFSpdR);
@@ -685,23 +720,17 @@ void TurnRightBackF() {
 
 void spinl(int speed) {
   MotorStop();
-  // delay(10);
-  // Motor(-speed, speed);
-  // delay(60);
-
-  // เลือกเซนเซอร์ตามความเร็ว tspd: ยิ่งหมุนช้า ยิ่งใช้เซนเซอร์ที่ห่างออกไป
-  // (เผื่อระยะเหวี่ยงที่แคบลง) ตรวจสอบจากช่วงแคบไปกว้างเพื่อให้ทุกเงื่อนไข
-  // มีโอกาสถูกใช้จริง (เช็ค <=50 ก่อน <=70 ไม่งั้น <=50 จะไม่มีทางถูกเลือก)
   int sensorIdx;
-  if (speed >= 80) sensorIdx = 1;
-  else if (speed <= 60) sensorIdx = 3;
-  else if (speed <= 70) sensorIdx = 2;
+  if (speed <= 50) sensorIdx = 3;
+  else if (speed <= 60) sensorIdx = 2;
   else sensorIdx = 1;
 
-  while (1) {
-    ReadCalibrateF();
-    Motor(-speed, speed);
-    if (F[0] <= Ref) break;
+  for (int i = 0; i <= 1; i++) {
+    do {
+      Motor(-speed, speed);
+      delayMicroseconds(80);
+      ReadCalibrateF();
+    } while (F[i] >= Ref);
   }
   for (int i = 0; i <= sensorIdx; i++) {
     do {
@@ -723,14 +752,15 @@ void spinl() {
 void spinl2(int speed) {
   MotorStop();
   int sensorIdx;
-  if (speed >= 80) sensorIdx = 1;
-  else if (speed <= 60) sensorIdx = 3;
-  else if (speed <= 70) sensorIdx = 2;
+  if (speed <= 50) sensorIdx = 3;
+  else if (speed <= 60) sensorIdx = 2;
   else sensorIdx = 1;
-  while (1) {
-    ReadCalibrateF();
-    Motor(-speed, speed);
-    if (F[0] <= Ref) break;
+  for (int i = 0; i <= 1; i++) {
+    do {
+      Motor(-speed, speed);
+      delayMicroseconds(80);
+      ReadCalibrateF();
+    } while (F[i] >= Ref);
   }
   for (int pass = 0; pass < 2; pass++) {
     for (int i = 0; i <= sensorIdx; i++) {
@@ -754,15 +784,16 @@ void spinl2() {
 void spinr(int speed) {
   MotorStop();
   int sensorIdx;
-  if (speed >= 80) sensorIdx = 6;
-  else if (speed <= 60) sensorIdx = 4;
-  else if (speed <= 70) sensorIdx = 5;
+  if (speed <= 50) sensorIdx = 4;
+  else if (speed <= 60) sensorIdx = 5;
   else sensorIdx = 6;
 
-  while (1) {
-    ReadCalibrateF();
-    Motor(speed, -speed);
-    if (F[7] <= Ref) break;
+  for (int i = 7; i >= 6; i--) {
+    do {
+      Motor(speed, -speed);
+      delayMicroseconds(80);
+      ReadCalibrateF();
+    } while (F[i] >= Ref);
   }
   for (int i = 7; i >= sensorIdx; i--) {
     do {
@@ -785,15 +816,16 @@ void spinr2(int speed) {
   MotorStop();
 
   int sensorIdx;
-  if (speed >= 80) sensorIdx = 6;
-  else if (speed <= 60) sensorIdx = 4;
-  else if (speed <= 70) sensorIdx = 5;
+  if (speed <= 50) sensorIdx = 4;
+  else if (speed <= 60) sensorIdx = 5;
   else sensorIdx = 6;
 
-  while (1) {
-    ReadCalibrateF();
-    Motor(speed, -speed);
-    if (F[7] <= Ref) break;
+  for (int i = 7; i >= 6; i--) {
+    do {
+      Motor(speed, -speed);
+      delayMicroseconds(80);
+      ReadCalibrateF();
+    } while (F[i] >= Ref);
   }
 
   for (int pass = 0; pass < 2; pass++) {
@@ -816,18 +848,20 @@ void spinr2() {
   spinr2(tspd);
 }
 
-// ==================== Back Sensor ====================
+// ======================================================================
+// [8] เลี้ยว / หมุน ด้วยเซนเซอร์หลัง
+// ======================================================================
 
-// เซนเซอร์หลัง B[] กลับด้านกับ F[] (ฝั่งซ้ายของหุ่นคือ index สูง) จึงไล่จาก 7 ลงมาถึง 7 - LChTurn
-void TurnLeft_B() {
-  // Motor(LTurnBackSpdL, LTurnBackSpdR);
-  // delay(TurnBackDelayL);
-  // while (1) {
-  //   Motor(LTurnBackSpdL, LTurnBackSpdR);
-  //   ReadCalibrateB();
-  //   if (B[5] >= Ref) break;
-  // }
-  for (int i = 7; i >= 7 - LChTurn; i--) {
+// เซนเซอร์หลัง B[] กลับด้านกับ F[] (ฝั่งซ้ายของหุ่นคือ index สูง) จึงไล่จาก 7 ลงมาถึง LChTurnB
+void TurnLeftB() {
+  for (int i = 7; i >= 6; i--) {
+    do {
+      Motor(LTurnBackSpdL, LTurnBackSpdR);
+      delayMicroseconds(80);
+      ReadCalibrateB();
+    } while (B[i] >= Ref);
+  }
+  for (int i = 7; i >= LChTurnB; i--) {
     do {
       Motor(LTurnBackSpdL, LTurnBackSpdR);
       delayMicroseconds(80);
@@ -836,16 +870,16 @@ void TurnLeft_B() {
   }
 }
 
-// ฝั่งขวาของหุ่นคือ index ต่ำของ B[] จึงไล่จาก 0 ขึ้นไปถึง 7 - RChTurn
-void TurnRight_B() {
-  // Motor(RTurnBackSpdL, RTurnBackSpdR);
-  // delay(TurnBackDelayR);
-  // while (1) {
-  //   Motor(RTurnBackSpdL, RTurnBackSpdR);
-  //   ReadCalibrateB();
-  //   if (B[2] >= Ref) break;
-  // }
-  for (int i = 0; i <= 7 - RChTurn; i++) {
+// ฝั่งขวาของหุ่นคือ index ต่ำของ B[] จึงไล่จาก 0 ขึ้นไปถึง RChTurnB
+void TurnRightB() {
+  for (int i = 0; i <= 1; i++) {
+    do {
+      Motor(RTurnBackSpdL, RTurnBackSpdR);
+      delayMicroseconds(80);
+      ReadCalibrateB();
+    } while (B[i] >= Ref);
+  }
+  for (int i = 0; i <= RChTurnB; i++) {
     do {
       Motor(RTurnBackSpdL, RTurnBackSpdR);
       delayMicroseconds(80);
@@ -855,11 +889,11 @@ void TurnRight_B() {
 }
 
 // เลี้ยวล้อเดียวแบบถอยหลัง เช็คเส้นด้วยเซนเซอร์หลัง B[] (คู่กับ TurnLeftBackF()/
-// TurnRightBackF() ที่เช็คเซนเซอร์หน้า F[]) กลับทิศมอเตอร์จาก TurnLeft_B()/
-// TurnRight_B() ตั้งความเร็ว/ดีเลย์แยกต่างหากผ่าน TurnSpeedLeftBackB()/
+// TurnRightBackF() ที่เช็คเซนเซอร์หน้า F[]) กลับทิศมอเตอร์จาก TurnLeftB()/
+// TurnRightB() ตั้งความเร็ว/ดีเลย์แยกต่างหากผ่าน TurnSpeedLeftBackB()/
 // TurnSpeedRightBackB() (ให้ล้อฝั่งที่ไม่ต้องการหมุน = 0 เพื่อให้เป็นการเลี้ยวล้อเดียว)
 void TurnLeftBackB() {
-  // เลือกเซนเซอร์ตามความเร็วล้อที่หมุน เหมือน spinl_B() (ดัชนีบน B[] เรียงกลับด้าน
+  // เลือกเซนเซอร์ตามความเร็วล้อที่หมุน เหมือน spinlb() (ดัชนีบน B[] เรียงกลับด้าน
   // จาก F[] จึงใช้ชุด 6/4/5 แทน 1/3/2 เพื่อให้ตรงตำแหน่งจริงเดียวกัน)
   int spd = max(abs(LTurnBackBSpdL), abs(LTurnBackBSpdR));
   int sensorIdx;
@@ -878,7 +912,7 @@ void TurnLeftBackB() {
 }
 
 void TurnRightBackB() {
-  // mirror ของ TurnLeftBackB() ไปฝั่งขวา เหมือน spinr_B()
+  // mirror ของ TurnLeftBackB() ไปฝั่งขวา เหมือน spinrb()
   int spd = max(abs(RTurnBackBSpdL), abs(RTurnBackBSpdR));
   int sensorIdx;
   if (spd >= 80) sensorIdx = 6;
@@ -895,24 +929,20 @@ void TurnRightBackB() {
   }
 }
 
-// ==================== Spin Left Back ====================
+// ---------- Spin Left Back ----------
 
-void spinl_B(int speed) {
+void spinlb(int speed) {
   MotorStop();
-  // เลือกเซนเซอร์ตาม tspd แบบเดียวกับ spinl() แต่ index บนอาเรย์ B[] ซึ่งเรียง
-  // กลับด้าน (B_PIN เรียงย้อนจาก F_PIN) ตำแหน่งเซนเซอร์จริงจึงตรงกับที่ spinl()
-  // ใช้ (F[1],F[2],F[3],F[0]) แค่แปลงเป็น index ของ B[] คือ B[6],B[5],B[4],B[7]
   int sensorIdx;
-  if (tspd >= 80) sensorIdx = 6;
-  else if (tspd <= 60) sensorIdx = 4;
-  else if (tspd <= 70) sensorIdx = 5;
+  if (tspd <= 50) sensorIdx = 4;
+  else if (tspd <= 60) sensorIdx = 5;
   else sensorIdx = 6;
-  while (1) {
-    ReadCalibrateB();
-    Motor(-speed, speed);
-    if (B[7] <= Ref) {
-      break;
-    }
+  for (int i = 7; i >= 6; i--) {
+    do {
+      Motor(-speed, speed);
+      delayMicroseconds(80);
+      ReadCalibrateB();
+    } while (B[i] >= Ref);
   }
 
   for (int i = 7; i >= sensorIdx; i--) {
@@ -928,23 +958,24 @@ void spinl_B(int speed) {
   MotorStop();
 }
 
-void spinl_B() {
-  spinl_B(tspd);
+void spinlb() {
+  spinlb(tspd);
 }
 
-// ==================== Spin Left 2 Back ====================
+// ---------- Spin Left 2 Back ----------
 
-void spinl2_B(int speed) {
+void spinl2b(int speed) {
   MotorStop();
   int sensorIdx;
-  if (tspd >= 80) sensorIdx = 6;
-  else if (tspd <= 60) sensorIdx = 4;
-  else if (tspd <= 70) sensorIdx = 5;
+  if (tspd <= 50) sensorIdx = 4;
+  else if (tspd <= 60) sensorIdx = 5;
   else sensorIdx = 6;
-  while (1) {
-    ReadCalibrateB();
-    Motor(-speed, speed);
-    if (B[7] <= Ref) break;
+  for (int i = 7; i >= 6; i--) {
+    do {
+      Motor(-speed, speed);
+      delayMicroseconds(80);
+      ReadCalibrateB();
+    } while (B[i] >= Ref);
   }
   for (int pass = 0; pass < 2; pass++) {
     for (int i = 7; i >= sensorIdx; i--) {
@@ -961,26 +992,24 @@ void spinl2_B(int speed) {
   MotorStop();
 }
 
-void spinl2_B() {
-  spinl2_B(tspd);
+void spinl2b() {
+  spinl2b(tspd);
 }
 
-// ==================== Spin Right Back ====================
+// ---------- Spin Right Back ----------
 
-void spinr_B(int speed) {
+void spinrb(int speed) {
   MotorStop();
-  // เลือกเซนเซอร์ตาม tspd แบบเดียวกับ spinr() แต่ index บนอาเรย์ B[] ซึ่งเรียง
-  // กลับด้าน ตำแหน่งเซนเซอร์จริงตรงกับที่ spinr() ใช้ (F[6],F[5],F[4],F[7])
-  // แปลงเป็น index ของ B[] คือ B[1],B[2],B[3],B[0]
   int sensorIdx;
-  if (tspd >= 80) sensorIdx = 1;
-  else if (tspd <= 60) sensorIdx = 3;
-  else if (tspd <= 70) sensorIdx = 2;
+  if (tspd <= 50) sensorIdx = 3;
+  else if (tspd <= 60) sensorIdx = 2;
   else sensorIdx = 1;
-  while (1) {
-    ReadCalibrateB();
-    Motor(speed, -speed);
-    if (B[0] <= Ref) break;
+  for (int i = 0; i <= 1; i++) {
+    do {
+      Motor(speed, -speed);
+      delayMicroseconds(80);
+      ReadCalibrateB();
+    } while (B[i] >= Ref);
   }
   for (int i = 0; i <= sensorIdx; i++) {
     do {
@@ -995,23 +1024,24 @@ void spinr_B(int speed) {
   MotorStop();
 }
 
-void spinr_B() {
-  spinr_B(tspd);
+void spinrb() {
+  spinrb(tspd);
 }
 
-// ==================== Spin Right 2 Back ====================
+// ---------- Spin Right 2 Back ----------
 
-void spinr2_B(int speed) {
+void spinr2b(int speed) {
   MotorStop();
   int sensorIdx;
-  if (tspd >= 80) sensorIdx = 1;
-  else if (tspd <= 60) sensorIdx = 3;
-  else if (tspd <= 70) sensorIdx = 2;
+  if (tspd <= 50) sensorIdx = 3;
+  else if (tspd <= 60) sensorIdx = 2;
   else sensorIdx = 1;
-  while (1) {
-    ReadCalibrateB();
-    Motor(speed, -speed);
-    if (B[0] <= Ref) break;
+  for (int i = 0; i <= 1; i++) {
+    do {
+      Motor(speed, -speed);
+      delayMicroseconds(80);
+      ReadCalibrateB();
+    } while (B[i] >= Ref);
   }
   for (int pass = 0; pass < 2; pass++) {
     for (int i = 0; i <= sensorIdx; i++) {
@@ -1028,32 +1058,29 @@ void spinr2_B(int speed) {
   MotorStop();
 }
 
-void spinr2_B() {
-  spinr2_B(tspd);
+void spinr2b() {
+  spinr2b(tspd);
 }
 
-// ---------- Track Select ----------
+// ======================================================================
+// [9] ทางแยก (TrackSelectF / TrackSelectB)
+// ======================================================================
 
 void TrackSelectF(int spd, char x) {
   switch (x) {
     case 's':
       Motor(-spd, -spd);
       delay(delay_break_f);
-      Move(-1, -1, 1);
       MotorStop();
-      // MotorShot();  // active short-brake (back-EMF) กันไถลจากแรงเฉื่อยที่ความเร็วสูง
       break;
 
     case 'S':
       while (1) {
         PIDF(tctL, tctR, slow_kp_f, slow_kd_f);
-        ReadCalibrateF();
         if (F[0] > Ref || F[7] > Ref) {
           Motor(-tctL, -tctR);
           delay(tct_delay_break);
-          Move(-1, -1, 1);
           MotorStop();
-          // MotorShot();  // active short-brake (back-EMF) กันไถลจากแรงเฉื่อยที่ความเร็วสูง
           break;
         }
       }
@@ -1062,40 +1089,28 @@ void TrackSelectF(int spd, char x) {
     case 'p':
       BZon();
       ReadCalibrateF();
-      while (1) {
-        Motor(spd, spd);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(spd, spd);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) {
-          BZoff();
-          break;
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(spd, spd);
+          ReadCalibrateF();
+          if (F[0] < Ref && F[7] < Ref) break;
         }
       }
+      BZoff();
       break;
 
     case 'P':
       ToFront();
       BZon();
       ReadCalibrateF();
-      while (1) {
-        Motor(spd, spd);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(spd, spd);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) {
-          BZoff();
-          break;
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(spd, spd);
+          ReadCalibrateF();
+          if (F[0] < Ref && F[7] < Ref) break;
         }
       }
+      BZoff();
       break;
 
     case 'l':
@@ -1120,79 +1135,56 @@ void TrackSelectF(int spd, char x) {
 
     case 'q':
       BZon();
-      while (1) {
-        Motor(tctL, tctR);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(tctL, tctR);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) {
-          BZoff();
-          break;
+
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(tctL, tctR);
+          ReadCalibrateF();
+          if (F[0] < Ref && F[7] < Ref) break;
         }
       }
+      BZoff();
       TurnLeft();
       break;
 
     case 'Q':
       ToFront();
       BZon();
-      while (1) {
-        Motor(tctL, tctR);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(tctL, tctR);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) {
-          BZoff();
-          break;
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(tctL, tctR);
+          ReadCalibrateF();
+          if (F[0] < Ref && F[7] < Ref) break;
         }
       }
+      BZoff();
       TurnLeft();
       break;
 
     case 'e':
       BZon();
-      while (1) {
-        Motor(tctL, tctR);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(tctL, tctR);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) {
-          BZoff();
-          break;
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(tctL, tctR);
+          ReadCalibrateF();
+          if (F[0] < Ref && F[7] < Ref) break;
         }
       }
+      BZoff();
       TurnRight();
       break;
 
     case 'E':
       ToFront();
       BZon();
-      while (1) {
-        Motor(tctL, tctR);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(tctL, tctR);
-        ReadCalibrateF();
-        if (F[0] < Ref && F[7] < Ref) {
-          BZoff();
-          break;
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(tctL, tctR);
+          ReadCalibrateF();
+          if (F[0] < Ref && F[7] < Ref) break;
         }
       }
+      BZoff();
       TurnRight();
       break;
 
@@ -1207,24 +1199,24 @@ void TrackSelectF(int spd, char x) {
 
     case 'd':
       ToCenter();
-      spinr_B();
+      spinrb();
       break;
 
     case 'D':
       ToFront();
       ToCenter();
-      spinr_B();
+      spinrb();
       break;
 
     case 'a':
       ToCenter();
-      spinl_B();
+      spinlb();
       break;
 
     case 'A':
       ToFront();
       ToCenter();
-      spinl_B();
+      spinlb();
       break;
 
     case 'b':
@@ -1286,19 +1278,16 @@ void TrackSelectB(int spd, char x) {
       delay(delay_break_b);
       Move(1, 1, 1);
       MotorStop();
-      MotorShot();  // active short-brake (back-EMF) กันไถลจากแรงเฉื่อยที่ความเร็วสูง
       break;
 
     case 'S':
       while (1) {
         PIDB(bctL, bctR, slow_kp_b, slow_kd_b);
-        ReadCalibrateB();
         if (B[0] > Ref || B[7] > Ref) {
           Motor(bctL, bctR);
           delay(bct_delay_break);
           Move(1, 1, 1);
           MotorStop();
-          MotorShot();  // active short-brake (back-EMF) กันไถลจากแรงเฉื่อยที่ความเร็วสูง
           break;
         }
       }
@@ -1327,20 +1316,14 @@ void TrackSelectB(int spd, char x) {
       ToBack();
       BZon();
       ReadCalibrateB();
-      while (1) {
-        Motor(-spd, -spd);
-        ReadCalibrateB();
-        if (B[0] < Ref && B[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(-spd, -spd);
-        ReadCalibrateB();
-        if (B[0] < Ref && B[7] < Ref) {
-          BZoff();
-          break;
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(-spd, -spd);
+          ReadCalibrateB();
+          if (B[0] < Ref && B[7] < Ref) break;
         }
       }
+      BZoff();
       break;
 
     case 'l':
@@ -1374,101 +1357,78 @@ void TrackSelectB(int spd, char x) {
 
     case 'd':
       BackCenter();
-      spinr_B();
+      spinrb();
       break;
 
     case 'D':
       ToBack();
       BackCenter();
-      spinr_B();
+      spinrb();
       break;
 
     case 'a':
       BackCenter();
-      spinl_B();
+      spinlb();
       break;
 
     case 'A':
       ToBack();
       BackCenter();
-      spinl_B();
+      spinlb();
       break;
 
     case 'e':
       BZon();
-      while (1) {
-        Motor(-bctL, -bctR);
-        ReadCalibrateB();
-        if (B[0] < Ref && B[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(-bctL, -bctR);
-        ReadCalibrateB();
-        if (B[0] < Ref && B[7] < Ref) {
-          break;
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(-bctL, -bctR);
+          ReadCalibrateB();
+          if (B[0] < Ref && B[7] < Ref) break;
         }
       }
-      TurnLeft_B();
+      BZoff();
+      TurnLeftB();
       break;
 
     case 'E':
       ToBack();
       BZon();
-      while (1) {
-        Motor(-bctL, -bctR);
-        ReadCalibrateB();
-        if (B[0] < Ref && B[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(-bctL, -bctR);
-        ReadCalibrateB();
-        if (B[0] < Ref && B[7] < Ref) {
-          BZoff();
-          break;
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(-bctL, -bctR);
+          ReadCalibrateB();
+          if (B[0] < Ref && B[7] < Ref) break;
         }
       }
-      TurnLeft_B();
+      BZoff();
+      TurnLeftB();
       break;
 
     case 'q':
       BZon();
-      while (1) {
-        Motor(-bctL, -bctR);
-        ReadCalibrateB();
-        if (B[0] < Ref && B[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(-bctL, -bctR);
-        ReadCalibrateB();
-        if (B[0] < Ref && B[7] < Ref) {
-          BZoff();
-          break;
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(-bctL, -bctR);
+          ReadCalibrateB();
+          if (B[0] < Ref && B[7] < Ref) break;
         }
       }
-      TurnRight_B();
+      BZoff();
+      TurnRightB();
       break;
 
     case 'Q':
       ToBack();
       BZon();
-      while (1) {
-        Motor(-bctL, -bctR);
-        ReadCalibrateB();
-        if (B[0] < Ref && B[7] < Ref) break;
-      }
-      delay(5);
-      while (1) {
-        Motor(-bctL, -bctR);
-        ReadCalibrateB();
-        if (B[0] < Ref && B[7] < Ref) {
-          BZoff();
-          break;
+      for (int pass = 0; pass < 2; pass++) {
+        while (1) {
+          Motor(-bctL, -bctR);
+          ReadCalibrateB();
+          if (B[0] < Ref && B[7] < Ref) break;
         }
       }
-      TurnRight_B();
+      BZoff();
+      TurnRightB();
       break;
 
     case 'b':
@@ -1504,6 +1464,10 @@ void TrackSelectB(int spd, char x) {
       break;
   }
 }
+
+// ======================================================================
+// [10] เดินตามเวลา / ระยะทาง + ทางแยก
+// ======================================================================
 
 void fftimer(int Speed, int totalTime, char select) {
   fftimer(Speed, totalTime);
@@ -1545,13 +1509,126 @@ void bbcm(int Speed, float distance, char select) {
   TrackSelectB(Speed, select);
 }
 
-// ---------- ff / bb Patterns ----------
-void ff(int Speed, char select) {
+// --- กำหนด Kp / Kd เอง: (speed, kp, [kd,] เวลา/ระยะ [, select]) ---
+// เวลา/ระยะ เป็น int เพื่อไม่ให้ชนกับ fftimer(speed, ms, 'p') / ffcm(speed, cm, 'p')
+
+void fftimer(int Speed, float Kp, int totalTime) {
+  fftimer_pid(Speed, totalTime, Kp, -1);
+}
+
+void fftimer(int Speed, float Kp, float Kd, int totalTime) {
+  fftimer_pid(Speed, totalTime, Kp, Kd);
+}
+
+void fftimer(int Speed, float Kp, int totalTime, char select) {
+  fftimer_pid(Speed, totalTime, Kp, -1);
+  TrackSelectF(Speed, select);
+}
+
+void fftimer(int Speed, float Kp, float Kd, int totalTime, char select) {
+  fftimer_pid(Speed, totalTime, Kp, Kd);
+  TrackSelectF(Speed, select);
+}
+
+void bbtimer(int Speed, float Kp, int totalTime) {
+  bbtimer_pid(Speed, totalTime, Kp, -1);
+}
+
+void bbtimer(int Speed, float Kp, float Kd, int totalTime) {
+  bbtimer_pid(Speed, totalTime, Kp, Kd);
+}
+
+void bbtimer(int Speed, float Kp, int totalTime, char select) {
+  bbtimer_pid(Speed, totalTime, Kp, -1);
+  TrackSelectB(Speed, select);
+}
+
+void bbtimer(int Speed, float Kp, float Kd, int totalTime, char select) {
+  bbtimer_pid(Speed, totalTime, Kp, Kd);
+  TrackSelectB(Speed, select);
+}
+
+void ffcm(int Speed, float Kp, int distance) {
+  ffcm_pid(Speed, distance, Kp, -1);
+}
+
+void ffcm(int Speed, float Kp, float Kd, int distance) {
+  ffcm_pid(Speed, distance, Kp, Kd);
+}
+
+void ffcm(int Speed, float Kp, int distance, char select) {
+  ffcm_pid(Speed, distance, Kp, -1);
+  TrackSelectF(Speed, select);
+}
+
+void ffcm(int Speed, float Kp, float Kd, int distance, char select) {
+  ffcm_pid(Speed, distance, Kp, Kd);
+  TrackSelectF(Speed, select);
+}
+
+void bbcm(int Speed, float Kp, int distance) {
+  bbcm_pid(Speed, distance, Kp, -1);
+}
+
+void bbcm(int Speed, float Kp, float Kd, int distance) {
+  bbcm_pid(Speed, distance, Kp, Kd);
+}
+
+void bbcm(int Speed, float Kp, int distance, char select) {
+  bbcm_pid(Speed, distance, Kp, -1);
+  TrackSelectB(Speed, select);
+}
+
+void bbcm(int Speed, float Kp, float Kd, int distance, char select) {
+  bbcm_pid(Speed, distance, Kp, Kd);
+  TrackSelectB(Speed, select);
+}
+
+// fft / bbt (ชื่อย่อ) แบบกำหนด Kp / Kd เอง
+
+void fft(int Speed, float Kp, int totalTime) {
+  fftimer(Speed, Kp, totalTime);
+}
+
+void fft(int Speed, float Kp, float Kd, int totalTime) {
+  fftimer(Speed, Kp, Kd, totalTime);
+}
+
+void fft(int Speed, float Kp, int totalTime, char select) {
+  fftimer(Speed, Kp, totalTime, select);
+}
+
+void fft(int Speed, float Kp, float Kd, int totalTime, char select) {
+  fftimer(Speed, Kp, Kd, totalTime, select);
+}
+
+void bbt(int Speed, float Kp, int totalTime) {
+  bbtimer(Speed, Kp, totalTime);
+}
+
+void bbt(int Speed, float Kp, float Kd, int totalTime) {
+  bbtimer(Speed, Kp, Kd, totalTime);
+}
+
+void bbt(int Speed, float Kp, int totalTime, char select) {
+  bbtimer(Speed, Kp, totalTime, select);
+}
+
+void bbt(int Speed, float Kp, float Kd, int totalTime, char select) {
+  bbtimer(Speed, Kp, Kd, totalTime, select);
+}
+
+// ======================================================================
+// [11] เดินตามเส้นจนเจอแยก (ff, bb, ffl, ffr, ffb, ffw ...)
+// ======================================================================
+
+void ff(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     if (F[0] > Ref || F[7] > Ref || (F[2] > Ref && F[5] > Ref)) {
       break;
     }
@@ -1559,12 +1636,21 @@ void ff(int Speed, char select) {
   TrackSelectF(Speed, select);
 }
 
-void bb(int Speed, char select) {
+void ff(int Speed, float Kp, char select) {
+  ff(Speed, Kp, -1, select);
+}
+
+void ff(int Speed, char select) {
+  ff(Speed, -1, -1, select);
+}
+
+void bb(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
   while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     if (B[0] > Ref || B[7] > Ref || (B[2] > Ref && B[5] > Ref)) {
       break;
     }
@@ -1572,82 +1658,123 @@ void bb(int Speed, char select) {
   TrackSelectB(Speed, select);
 }
 
-void ffc2(int Speed, char select) {
+void bb(int Speed, float Kp, char select) {
+  bb(Speed, Kp, -1, select);
+}
+
+void bb(int Speed, char select) {
+  bb(Speed, -1, -1, select);
+}
+
+void ffc2(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     if ((F[0] > Ref && F[7] > Ref) || (F[1] > Ref && F[6] > Ref) || (F[2] > Ref && F[3] > Ref && F[4] > Ref && F[5] > Ref)) break;
   }
   TrackSelectF(Speed, select);
 }
 
-void ffc(int Speed, char select) {
+void ffc2(int Speed, float Kp, char select) {
+  ffc2(Speed, Kp, -1, select);
+}
+
+void ffc2(int Speed, char select) {
+  ffc2(Speed, -1, -1, select);
+}
+
+void ffc(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     if (F[0] >= Ref && F[7] >= Ref) break;
   }
   TrackSelectF(Speed, select);
 }
 
-void bbc2(int Speed, char select) {
+void ffc(int Speed, float Kp, char select) {
+  ffc(Speed, Kp, -1, select);
+}
+
+void ffc(int Speed, char select) {
+  ffc(Speed, -1, -1, select);
+}
+
+void bbc2(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
   while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     if ((B[0] > Ref && B[7] > Ref) || (B[1] > Ref && B[6] > Ref) || (B[2] > Ref && B[3] > Ref && B[4] > Ref && B[5] > Ref)) break;
   }
   TrackSelectB(Speed, select);
 }
 
-void bbc(int Speed, char select) {
+void bbc2(int Speed, float Kp, char select) {
+  bbc2(Speed, Kp, -1, select);
+}
+
+void bbc2(int Speed, char select) {
+  bbc2(Speed, -1, -1, select);
+}
+
+void bbc(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
   while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     if (B[0] >= Ref && B[7] >= Ref) break;
   }
   TrackSelectB(Speed, select);
 }
 
+void bbc(int Speed, float Kp, char select) {
+  bbc(Speed, Kp, -1, select);
+}
+
+void bbc(int Speed, char select) {
+  bbc(Speed, -1, -1, select);
+}
+
+void ffl(int Speed, float Kp, float Kd, char select) {
+  BaseSpeed = Speed;
+  InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
+  while (1) {
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
+    if (F[0] > Ref) {
+      break;
+    }
+  }
+  TrackSelectF(Speed, select);
+}
+
+void ffl(int Speed, float Kp, char select) {
+  ffl(Speed, Kp, -1, select);
+}
+
 void ffl(int Speed, char select) {
-  BaseSpeed = Speed;
-  InitialSpeed();
-  while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
-    if (F[0] > Ref) {
-      break;
-    }
-  }
-  TrackSelectF(Speed, select);
+  ffl(Speed, -1, -1, select);
 }
 
-void ffl0(int Speed, char select) {
+void ffl2(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
-    if (F[0] > Ref) {
-      break;
-    }
-  }
-  TrackSelectF(Speed, select);
-}
-
-void ffl2(int Speed, char select) {
-  BaseSpeed = Speed;
-  InitialSpeed();
-  while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     if (F[0] > Ref && F[1] > Ref && F[2] > Ref && F[3] > Ref && F[4] > Ref) {
       break;
     }
@@ -1655,38 +1782,43 @@ void ffl2(int Speed, char select) {
   TrackSelectF(Speed, select);
 }
 
+void ffl2(int Speed, float Kp, char select) {
+  ffl2(Speed, Kp, -1, select);
+}
+
+void ffl2(int Speed, char select) {
+  ffl2(Speed, -1, -1, select);
+}
+
+void bbl(int Speed, float Kp, float Kd, char select) {
+  BaseSpeed = Speed;
+  InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
+  while (1) {
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
+    if (B[0] > Ref) {
+      break;
+    }
+  }
+  TrackSelectB(Speed, select);
+}
+
+void bbl(int Speed, float Kp, char select) {
+  bbl(Speed, Kp, -1, select);
+}
+
 void bbl(int Speed, char select) {
-  BaseSpeed = Speed;
-  InitialSpeed();
-  while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
-    if (B[0] > Ref) {
-      break;
-    }
-  }
-  TrackSelectB(Speed, select);
+  bbl(Speed, -1, -1, select);
 }
 
-void bbl0(int Speed, char select) {
+void bbl2(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
   while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
-    if (B[0] > Ref) {
-      break;
-    }
-  }
-  TrackSelectB(Speed, select);
-}
-
-void bbl2(int Speed, char select) {
-  BaseSpeed = Speed;
-  InitialSpeed();
-  while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     if (B[0] > Ref && B[1] > Ref && B[2] > Ref && B[3] > Ref && B[4] > Ref) {
       break;
     }
@@ -1694,76 +1826,96 @@ void bbl2(int Speed, char select) {
   TrackSelectB(Speed, select);
 }
 
+void bbl2(int Speed, float Kp, char select) {
+  bbl2(Speed, Kp, -1, select);
+}
+
+void bbl2(int Speed, char select) {
+  bbl2(Speed, -1, -1, select);
+}
+
+void ffr(int Speed, float Kp, float Kd, char select) {
+  BaseSpeed = Speed;
+  InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
+  while (1) {
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
+    if (F[7] > Ref) break;
+  }
+  TrackSelectF(Speed, select);
+}
+
+void ffr(int Speed, float Kp, char select) {
+  ffr(Speed, Kp, -1, select);
+}
+
 void ffr(int Speed, char select) {
-  BaseSpeed = Speed;
-  InitialSpeed();
-  while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
-    if (F[7] > Ref) break;
-  }
-  TrackSelectF(Speed, select);
+  ffr(Speed, -1, -1, select);
 }
 
-void ffr7(int Speed, char select) {
+void ffr2(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
-    if (F[7] > Ref) break;
-  }
-  TrackSelectF(Speed, select);
-}
-
-void ffr2(int Speed, char select) {
-  BaseSpeed = Speed;
-  InitialSpeed();
-  while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     if (F[3] > Ref && F[4] > Ref && F[5] > Ref && F[6] > Ref && F[7] > Ref) break;
   }
   TrackSelectF(Speed, select);
 }
 
+void ffr2(int Speed, float Kp, char select) {
+  ffr2(Speed, Kp, -1, select);
+}
+
+void ffr2(int Speed, char select) {
+  ffr2(Speed, -1, -1, select);
+}
+
+void bbr(int Speed, float Kp, float Kd, char select) {
+  BaseSpeed = Speed;
+  InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
+  while (1) {
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
+    if (B[7] > Ref) {
+      break;
+    }
+  }
+  TrackSelectB(Speed, select);
+}
+
+void bbr(int Speed, float Kp, char select) {
+  bbr(Speed, Kp, -1, select);
+}
+
 void bbr(int Speed, char select) {
-  BaseSpeed = Speed;
-  InitialSpeed();
-  while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
-    if (B[7] > Ref) {
-      break;
-    }
-  }
-  TrackSelectB(Speed, select);
+  bbr(Speed, -1, -1, select);
 }
 
-void bbr7(int Speed, char select) {
+void bbr2(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
   while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
-    if (B[7] > Ref) {
-      break;
-    }
-  }
-  TrackSelectB(Speed, select);
-}
-
-void bbr2(int Speed, char select) {
-  BaseSpeed = Speed;
-  InitialSpeed();
-  while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     if (B[3] > Ref && B[4] > Ref && B[5] > Ref && B[6] > Ref && B[7] > Ref) {
       break;
     }
   }
   TrackSelectB(Speed, select);
+}
+
+void bbr2(int Speed, float Kp, char select) {
+  bbr2(Speed, Kp, -1, select);
+}
+
+void bbr2(int Speed, char select) {
+  bbr2(Speed, -1, -1, select);
 }
 
 void ffblack(int SpeedL, int SpeedR, char select) {
@@ -1814,93 +1966,248 @@ void bbb(int Speed, char select) {
   bbblack(Speed, select);
 }
 
-void ffwhite(int Speed, char select) {
+void ffwhite(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
-    if ((F[0] < Ref && F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref && F[7] < Ref)) break;
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
+    if (F[0] < Ref && F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref && F[7] < Ref) break;
   }
   TrackSelectF(Speed, select);
 }
 
-void ffw(int Speed, char select) {
-  ffwhite(Speed, select);
+void ffwhite(int Speed, float Kp, char select) {
+  ffwhite(Speed, Kp, -1, select);
 }
 
-void bbwhite(int Speed, char select) {
+void ffwhite(int Speed, char select) {
+  ffwhite(Speed, -1, -1, select);
+}
+
+void ffw(int Speed, float Kp, float Kd, char select) {
+  ffwhite(Speed, Kp, Kd, select);
+}
+
+void ffw(int Speed, float Kp, char select) {
+  ffw(Speed, Kp, -1, select);
+}
+
+void ffw(int Speed, char select) {
+  ffw(Speed, -1, -1, select);
+}
+
+void bbwhite(int Speed, float Kp, float Kd, char select) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
   while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
-    if ((B[0] < Ref && B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref && B[7] < Ref)) break;
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
+    if (B[0] < Ref && B[1] < Ref && B[2] < Ref && B[3] < Ref && B[4] < Ref && B[5] < Ref && B[6] < Ref && B[7] < Ref) break;
   }
   TrackSelectB(Speed, select);
 }
 
-void bbw(int Speed, char select) {
-  bbwhite(Speed, select);
+void bbwhite(int Speed, float Kp, char select) {
+  bbwhite(Speed, Kp, -1, select);
 }
 
-void ffnum(int Speed, char select, int numm) {
+void bbwhite(int Speed, char select) {
+  bbwhite(Speed, -1, -1, select);
+}
+
+void bbw(int Speed, float Kp, float Kd, char select) {
+  bbwhite(Speed, Kp, Kd, select);
+}
+
+void bbw(int Speed, float Kp, char select) {
+  bbw(Speed, Kp, -1, select);
+}
+
+void bbw(int Speed, char select) {
+  bbw(Speed, -1, -1, select);
+}
+
+void ffnum(int Speed, float Kp, float Kd, char select, int numm) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     if (F[numm] > Ref) break;
   }
   TrackSelectF(Speed, select);
 }
 
-void bbnum(int Speed, char select, int numm) {
+void ffnum(int Speed, float Kp, char select, int numm) {
+  ffnum(Speed, Kp, -1, select, numm);
+}
+
+void ffnum(int Speed, char select, int numm) {
+  ffnum(Speed, -1, -1, select, numm);
+}
+
+// วิ่งตามเส้นจนผลรวมเซนเซอร์หน้า F[0]..F[7] (หลัง ReadCalibrateF แต่ละตัว 0-1000) >= sum_target
+// sum_target 0-8000 | เช่น เส้นปกติ ~1000-2000, แยกตัดเต็ม ~6000-8000
+void ffsum(int Speed, float Kp, float Kd, char select, int sum_target) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
+    long sum = 0;
+    for (int i = 0; i < NUM_SENSORS; i++) sum += F[i];
+    if (sum >= sum_target) break;
+  }
+  TrackSelectF(Speed, select);
+}
+
+void ffsum(int Speed, float Kp, char select, int sum_target) {
+  ffsum(Speed, Kp, -1, select, sum_target);
+}
+
+void ffsum(int Speed, char select, int sum_target) {
+  ffsum(Speed, -1, -1, select, sum_target);
+}
+
+void bbnum(int Speed, float Kp, float Kd, char select, int numm) {
+  BaseSpeed = Speed;
+  InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
+  while (1) {
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     if (B[numm] > Ref) break;
   }
   TrackSelectB(Speed, select);
 }
 
-void ffn(int Speed, char select, int numm) {
-  ffnum(Speed, select, numm);
-}
-void bbn(int Speed, char select, int numm) {
-  bbnum(Speed, select, numm);
+void bbnum(int Speed, float Kp, char select, int numm) {
+  bbnum(Speed, Kp, -1, select, numm);
 }
 
-void ff_distance(int Speed, char select, float distance) {
+void bbnum(int Speed, char select, int numm) {
+  bbnum(Speed, -1, -1, select, numm);
+}
+
+// ถอยตามเส้นจนผลรวมเซนเซอร์หลัง B[0]..B[7] (หลัง ReadCalibrateB แต่ละตัว 0-1000) >= sum_target
+// sum_target 0-8000 (เหมือน ffsum)
+void bbsum(int Speed, float Kp, float Kd, char select, int sum_target) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
   while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
+    long sum = 0;
+    for (int i = 0; i < NUM_SENSORS; i++) sum += B[i];
+    if (sum >= sum_target) break;
+  }
+  TrackSelectB(Speed, select);
+}
+
+void bbsum(int Speed, float Kp, char select, int sum_target) {
+  bbsum(Speed, Kp, -1, select, sum_target);
+}
+
+void bbsum(int Speed, char select, int sum_target) {
+  bbsum(Speed, -1, -1, select, sum_target);
+}
+
+void ffn(int Speed, float Kp, float Kd, char select, int numm) {
+  ffnum(Speed, Kp, Kd, select, numm);
+}
+
+void ffn(int Speed, float Kp, char select, int numm) {
+  ffn(Speed, Kp, -1, select, numm);
+}
+
+void ffn(int Speed, char select, int numm) {
+  ffn(Speed, -1, -1, select, numm);
+}
+void bbn(int Speed, float Kp, float Kd, char select, int numm) {
+  bbnum(Speed, Kp, Kd, select, numm);
+}
+
+void bbn(int Speed, float Kp, char select, int numm) {
+  bbn(Speed, Kp, -1, select, numm);
+}
+
+void bbn(int Speed, char select, int numm) {
+  bbn(Speed, -1, -1, select, numm);
+}
+
+void ff_distance(int Speed, float Kp, float Kd, char select, float distance) {
+  BaseSpeed = Speed;
+  InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
+  while (1) {
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     if (analogRead(DIST) >= distance) break;
   }
   TrackSelectF(Speed, select);
 }
 
-void bb_distance(int Speed, char select, float distance) {
+void ff_distance(int Speed, float Kp, char select, float distance) {
+  ff_distance(Speed, Kp, -1, select, distance);
+}
+
+void ff_distance(int Speed, char select, float distance) {
+  ff_distance(Speed, -1, -1, select, distance);
+}
+
+void bb_distance(int Speed, float Kp, float Kd, char select, float distance) {
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
   while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     if (analogRead(DIST) <= distance) break;
   }
   TrackSelectB(Speed, select);
 }
 
-void ffd(int Speed, char select, float distance) {
-  ff_distance(Speed, select, distance);
-}
-void bbd(int Speed, char select, float distance) {
-  bb_distance(Speed, select, distance);
+void bb_distance(int Speed, float Kp, char select, float distance) {
+  bb_distance(Speed, Kp, -1, select, distance);
 }
 
-// ===== Stop PID =====
+void bb_distance(int Speed, char select, float distance) {
+  bb_distance(Speed, -1, -1, select, distance);
+}
+
+void ffd(int Speed, float Kp, float Kd, char select, float distance) {
+  ff_distance(Speed, Kp, Kd, select, distance);
+}
+
+void ffd(int Speed, float Kp, char select, float distance) {
+  ffd(Speed, Kp, -1, select, distance);
+}
+
+void ffd(int Speed, char select, float distance) {
+  ffd(Speed, -1, -1, select, distance);
+}
+void bbd(int Speed, float Kp, float Kd, char select, float distance) {
+  bb_distance(Speed, Kp, Kd, select, distance);
+}
+
+void bbd(int Speed, float Kp, char select, float distance) {
+  bbd(Speed, Kp, -1, select, distance);
+}
+
+void bbd(int Speed, char select, float distance) {
+  bbd(Speed, -1, -1, select, distance);
+}
+
+// ======================================================================
+// [12] หยุดตามระยะเซนเซอร์ (ff_distances)
+// ======================================================================
+
 float PID_KP_STOP = 0.35;
 float PID_KD_STOP = 0.8;
 
@@ -1928,7 +2235,9 @@ void ff_distances(int Speed, char select, int ir_target) {
       int newBase = PID_Stop(ir, ir_target, Speed);
       if (newBase != BaseSpeed) {
         BaseSpeed = newBase;
-        InitialSpeed();  // BaseSpeed เปลี่ยน ต้อง InitialSpeed() ใหม่
+        int keepErr = LastError_F;  // เก็บ error เดิมไว้ ไม่ให้ D-term ถูกรีเซ็ตกลางทาง
+        InitialSpeed();             // BaseSpeed เปลี่ยน ต้อง InitialSpeed() ใหม่
+        LastError_F = keepErr;
       }
     }
     // ===== PID ตามเส้น =====
@@ -1944,7 +2253,9 @@ void ffds(int Speed, char select, int ir_target) {
   ff_distances(Speed, select, ir_target);
 }
 
-// ---------- GoStart / GoEnd ----------
+// ======================================================================
+// [13] ออกจากจุดเริ่ม / เข้าจุดจบ (gostart / goend)
+// ======================================================================
 
 void gostart(int LeftSpeed, int RightSpeed) {
   Move(LeftSpeed, RightSpeed, 100);
@@ -1986,7 +2297,9 @@ void goend(int Speed) {
   MotorStop();
 }
 
-// ---------- Balance ----------
+// ======================================================================
+// [14] ตั้งหุ่นตรงเส้น (balance / set)
+// ======================================================================
 
 void balancef(int Counter) {
   Move(-10, -10, 50);
@@ -2253,6 +2566,10 @@ void set_bc(int num) {
   SetRobotAngle();
 }
 
+// ======================================================================
+// [15] Serial debug ตำแหน่งเส้น
+// ======================================================================
+
 void SerialPositionF() {
   while (1) {
     int pos = readPositionF(200, 50);
@@ -2283,7 +2600,9 @@ void SerialPositionFB() {
   }
 }
 
-// ---------- Circle Motion (CL/CR: เบี่ยงซ้าย/ขวา ด้วย set_positionL/R ชั่วคราว) ----------
+// ======================================================================
+// [16] วิ่งโค้ง (CL / CR: เบี่ยงซ้าย/ขวา ด้วย set_positionL/R ชั่วคราว)
+// ======================================================================
 
 // Ramp เร่งความเร็วช่วงต้นระยะทาง (ไม่ผ่อนท้าย) ตอนนี้ยังไม่มีฟังก์ชันไหนเรียกใช้
 // (ffcmcl/ffcmcr/bbcmcl/bbcmcr เปลี่ยนไปใช้ ffcm/bbcm ธรรมดาแล้ว) สเกล LeftBaseSpeed/
@@ -2294,19 +2613,18 @@ static void ffcm_ramped(int Speed, int distance) {
   int target_speed = min(LeftBaseSpeed, RightBaseSpeed);
   float traveled_distance = 0;
   unsigned long last_time = millis();
-  float speed_scale = 1.75;  // <-- ใช้ค่าที่คำนวณจากการวัดจริง (เหมือน ffcm)
 
   // เร่งความเร็วเฉพาะช่วงต้น ไม่ผ่อนท้าย: จบด้วยความเร็วเต็มเพื่อต่อคำสั่งถัดไปได้ลื่น
-  const float ACCEL_DISTANCE_CM = 20.0;
+  const float ACCEL_DISTANCE_CM = 20.0f;
   const int MIN_SPEED = 10;
   bool enableRamp = (distance >= 30 && target_speed > MIN_SPEED);
   float rampSpeed = enableRamp ? MIN_SPEED : target_speed;
 
   while (1) {
     unsigned long current_time = millis();
-    float delta_time = (current_time - last_time) / 1000.0;
+    float delta_time = (current_time - last_time) / 1000.0f;
     // คิดระยะจากความเร็วที่สั่งจริงในรอบก่อน (ช่วงเร่งวิ่งช้ากว่า target_speed) ไม่ให้ระยะขาด
-    traveled_distance += (rampSpeed * speed_scale) * delta_time;
+    traveled_distance += (rampSpeed * speed_scale_ff) * delta_time;
     last_time = current_time;
 
     if (distance > 0 && traveled_distance >= distance) break;
@@ -2327,19 +2645,18 @@ static void bbcm_ramped(int Speed, int distance) {
   int target_speed = min(BackLeftBaseSpeed, BackRightBaseSpeed);
   float traveled_distance = 0;
   unsigned long last_time = millis();
-  float speed_scale = 1.75;  // <-- ใช้ค่าที่คำนวณจากการวัดจริง (เหมือน bbcm)
 
   // เร่งความเร็วเฉพาะช่วงต้น ไม่ผ่อนท้าย: จบด้วยความเร็วเต็มเพื่อต่อคำสั่งถัดไปได้ลื่น
-  const float ACCEL_DISTANCE_CM = 20.0;
+  const float ACCEL_DISTANCE_CM = 20.0f;
   const int MIN_SPEED = 10;
   bool enableRamp = (distance >= 30 && target_speed > MIN_SPEED);
   float rampSpeed = enableRamp ? MIN_SPEED : target_speed;
 
   while (1) {
     unsigned long current_time = millis();
-    float delta_time = (current_time - last_time) / 1000.0;
+    float delta_time = (current_time - last_time) / 1000.0f;
     // คิดระยะจากความเร็วที่สั่งจริงในรอบก่อน (ช่วงเร่งวิ่งช้ากว่า target_speed) ไม่ให้ระยะขาด
-    traveled_distance += (rampSpeed * speed_scale) * delta_time;
+    traveled_distance += (rampSpeed * speed_scale_bb) * delta_time;
     last_time = current_time;
 
     if (distance > 0 && traveled_distance >= distance) break;
@@ -2372,7 +2689,7 @@ static void fftimer_ramped(int Speed, int totalTime) {
   unsigned long endTime = startTime + totalTime;
 
   while (millis() <= endTime) {
-    float scale = 1.0;
+    float scale = 1.0f;
     unsigned long elapsed = millis() - startTime;
     if (enableRamp && elapsed < ACCEL_TIME_MS) {
       float rampSpeed = MIN_SPEED + (target_speed - MIN_SPEED) * ((float)elapsed / ACCEL_TIME_MS);
@@ -2396,7 +2713,7 @@ static void bbtimer_ramped(int Speed, int totalTime) {
   unsigned long endTime = startTime + totalTime;
 
   while (millis() <= endTime) {
-    float scale = 1.0;
+    float scale = 1.0f;
     unsigned long elapsed = millis() - startTime;
     if (enableRamp && elapsed < ACCEL_TIME_MS) {
       float rampSpeed = MIN_SPEED + (target_speed - MIN_SPEED) * ((float)elapsed / ACCEL_TIME_MS);
@@ -2406,32 +2723,50 @@ static void bbtimer_ramped(int Speed, int totalTime) {
   }
 }
 
-void ffcl(int Speed, char select) {
+void ffcl(int Speed, float Kp, float Kd, char select) {
   int temp = set_position;
   set_position = set_positionL;
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     if (F[0] > Ref) break;
   }
   TrackSelectF(Speed, select);
   set_position = temp;
 }
 
-void ffcr(int Speed, char select) {
+void ffcl(int Speed, float Kp, char select) {
+  ffcl(Speed, Kp, -1, select);
+}
+
+void ffcl(int Speed, char select) {
+  ffcl(Speed, -1, -1, select);
+}
+
+void ffcr(int Speed, float Kp, float Kd, char select) {
   int temp = set_position;
   set_position = set_positionR;
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Front;
+  if (Kd < 0) Kd = PID_KD_Front;
   while (1) {
-    PIDF(LeftBaseSpeed, RightBaseSpeed, PID_KP_Front, PID_KD_Front);
-    ReadCalibrateF();
+    PIDF(LeftBaseSpeed, RightBaseSpeed, Kp, Kd);
     if (F[7] > Ref || (F[1] < Ref && F[2] < Ref && F[3] < Ref && F[4] < Ref && F[5] < Ref && F[6] < Ref)) break;
   }
   TrackSelectF(Speed, select);
   set_position = temp;
+}
+
+void ffcr(int Speed, float Kp, char select) {
+  ffcr(Speed, Kp, -1, select);
+}
+
+void ffcr(int Speed, char select) {
+  ffcr(Speed, -1, -1, select);
 }
 
 void fftimercl(int Speed, int totalTime) {
@@ -2490,32 +2825,50 @@ void ffcmcr(int Speed, int distance, char select) {
   set_position = temp;
 }
 
-void bbcl(int Speed, char select) {
+void bbcl(int Speed, float Kp, float Kd, char select) {
   int temp = set_position;
   set_position = set_positionL;
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
   while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     if (B[0] > Ref) break;
   }
   TrackSelectB(Speed, select);
   set_position = temp;
 }
 
-void bbcr(int Speed, char select) {
+void bbcl(int Speed, float Kp, char select) {
+  bbcl(Speed, Kp, -1, select);
+}
+
+void bbcl(int Speed, char select) {
+  bbcl(Speed, -1, -1, select);
+}
+
+void bbcr(int Speed, float Kp, float Kd, char select) {
   int temp = set_position;
   set_position = set_positionR;
   BaseSpeed = Speed;
   InitialSpeed();
+  if (Kp < 0) Kp = PID_KP_Back;
+  if (Kd < 0) Kd = PID_KD_Back;
   while (1) {
-    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, PID_KP_Back, PID_KD_Back);
-    ReadCalibrateB();
+    PIDB(BackLeftBaseSpeed, BackRightBaseSpeed, Kp, Kd);
     if (B[7] > Ref) break;
   }
   TrackSelectB(Speed, select);
   set_position = temp;
+}
+
+void bbcr(int Speed, float Kp, char select) {
+  bbcr(Speed, Kp, -1, select);
+}
+
+void bbcr(int Speed, char select) {
+  bbcr(Speed, -1, -1, select);
 }
 
 void bbtimercl(int Speed, int totalTime) {
@@ -2571,6 +2924,232 @@ void bbcmcr(int Speed, int distance, char select) {
   int temp = set_position;
   set_position = set_positionR;
   bbcm(Speed, distance, select);
+  set_position = temp;
+}
+
+// --- *timercl/cr, *cmcl/cr แบบกำหนด Kp / Kd เอง: (speed, kp, [kd,] เวลา/ระยะ [, select]) ---
+
+void fftimercl(int Speed, float Kp, int totalTime) {
+  int temp = set_position;
+  set_position = set_positionL;
+  fftimer(Speed, Kp, totalTime);
+  set_position = temp;
+}
+
+void fftimercl(int Speed, float Kp, float Kd, int totalTime) {
+  int temp = set_position;
+  set_position = set_positionL;
+  fftimer(Speed, Kp, Kd, totalTime);
+  set_position = temp;
+}
+
+void fftimercl(int Speed, float Kp, int totalTime, char select) {
+  int temp = set_position;
+  set_position = set_positionL;
+  fftimer(Speed, Kp, totalTime, select);
+  set_position = temp;
+}
+
+void fftimercl(int Speed, float Kp, float Kd, int totalTime, char select) {
+  int temp = set_position;
+  set_position = set_positionL;
+  fftimer(Speed, Kp, Kd, totalTime, select);
+  set_position = temp;
+}
+
+void ffcmcl(int Speed, float Kp, int distance) {
+  int temp = set_position;
+  set_position = set_positionL;
+  ffcm(Speed, Kp, distance);
+  set_position = temp;
+}
+
+void ffcmcl(int Speed, float Kp, float Kd, int distance) {
+  int temp = set_position;
+  set_position = set_positionL;
+  ffcm(Speed, Kp, Kd, distance);
+  set_position = temp;
+}
+
+void ffcmcl(int Speed, float Kp, int distance, char select) {
+  int temp = set_position;
+  set_position = set_positionL;
+  ffcm(Speed, Kp, distance, select);
+  set_position = temp;
+}
+
+void ffcmcl(int Speed, float Kp, float Kd, int distance, char select) {
+  int temp = set_position;
+  set_position = set_positionL;
+  ffcm(Speed, Kp, Kd, distance, select);
+  set_position = temp;
+}
+
+void fftimercr(int Speed, float Kp, int totalTime) {
+  int temp = set_position;
+  set_position = set_positionR;
+  fftimer(Speed, Kp, totalTime);
+  set_position = temp;
+}
+
+void fftimercr(int Speed, float Kp, float Kd, int totalTime) {
+  int temp = set_position;
+  set_position = set_positionR;
+  fftimer(Speed, Kp, Kd, totalTime);
+  set_position = temp;
+}
+
+void fftimercr(int Speed, float Kp, int totalTime, char select) {
+  int temp = set_position;
+  set_position = set_positionR;
+  fftimer(Speed, Kp, totalTime, select);
+  set_position = temp;
+}
+
+void fftimercr(int Speed, float Kp, float Kd, int totalTime, char select) {
+  int temp = set_position;
+  set_position = set_positionR;
+  fftimer(Speed, Kp, Kd, totalTime, select);
+  set_position = temp;
+}
+
+void ffcmcr(int Speed, float Kp, int distance) {
+  int temp = set_position;
+  set_position = set_positionR;
+  ffcm(Speed, Kp, distance);
+  set_position = temp;
+}
+
+void ffcmcr(int Speed, float Kp, float Kd, int distance) {
+  int temp = set_position;
+  set_position = set_positionR;
+  ffcm(Speed, Kp, Kd, distance);
+  set_position = temp;
+}
+
+void ffcmcr(int Speed, float Kp, int distance, char select) {
+  int temp = set_position;
+  set_position = set_positionR;
+  ffcm(Speed, Kp, distance, select);
+  set_position = temp;
+}
+
+void ffcmcr(int Speed, float Kp, float Kd, int distance, char select) {
+  int temp = set_position;
+  set_position = set_positionR;
+  ffcm(Speed, Kp, Kd, distance, select);
+  set_position = temp;
+}
+
+void bbtimercl(int Speed, float Kp, int totalTime) {
+  int temp = set_position;
+  set_position = set_positionL;
+  bbtimer(Speed, Kp, totalTime);
+  set_position = temp;
+}
+
+void bbtimercl(int Speed, float Kp, float Kd, int totalTime) {
+  int temp = set_position;
+  set_position = set_positionL;
+  bbtimer(Speed, Kp, Kd, totalTime);
+  set_position = temp;
+}
+
+void bbtimercl(int Speed, float Kp, int totalTime, char select) {
+  int temp = set_position;
+  set_position = set_positionL;
+  bbtimer(Speed, Kp, totalTime, select);
+  set_position = temp;
+}
+
+void bbtimercl(int Speed, float Kp, float Kd, int totalTime, char select) {
+  int temp = set_position;
+  set_position = set_positionL;
+  bbtimer(Speed, Kp, Kd, totalTime, select);
+  set_position = temp;
+}
+
+void bbcmcl(int Speed, float Kp, int distance) {
+  int temp = set_position;
+  set_position = set_positionL;
+  bbcm(Speed, Kp, distance);
+  set_position = temp;
+}
+
+void bbcmcl(int Speed, float Kp, float Kd, int distance) {
+  int temp = set_position;
+  set_position = set_positionL;
+  bbcm(Speed, Kp, Kd, distance);
+  set_position = temp;
+}
+
+void bbcmcl(int Speed, float Kp, int distance, char select) {
+  int temp = set_position;
+  set_position = set_positionL;
+  bbcm(Speed, Kp, distance, select);
+  set_position = temp;
+}
+
+void bbcmcl(int Speed, float Kp, float Kd, int distance, char select) {
+  int temp = set_position;
+  set_position = set_positionL;
+  bbcm(Speed, Kp, Kd, distance, select);
+  set_position = temp;
+}
+
+void bbtimercr(int Speed, float Kp, int totalTime) {
+  int temp = set_position;
+  set_position = set_positionR;
+  bbtimer(Speed, Kp, totalTime);
+  set_position = temp;
+}
+
+void bbtimercr(int Speed, float Kp, float Kd, int totalTime) {
+  int temp = set_position;
+  set_position = set_positionR;
+  bbtimer(Speed, Kp, Kd, totalTime);
+  set_position = temp;
+}
+
+void bbtimercr(int Speed, float Kp, int totalTime, char select) {
+  int temp = set_position;
+  set_position = set_positionR;
+  bbtimer(Speed, Kp, totalTime, select);
+  set_position = temp;
+}
+
+void bbtimercr(int Speed, float Kp, float Kd, int totalTime, char select) {
+  int temp = set_position;
+  set_position = set_positionR;
+  bbtimer(Speed, Kp, Kd, totalTime, select);
+  set_position = temp;
+}
+
+void bbcmcr(int Speed, float Kp, int distance) {
+  int temp = set_position;
+  set_position = set_positionR;
+  bbcm(Speed, Kp, distance);
+  set_position = temp;
+}
+
+void bbcmcr(int Speed, float Kp, float Kd, int distance) {
+  int temp = set_position;
+  set_position = set_positionR;
+  bbcm(Speed, Kp, Kd, distance);
+  set_position = temp;
+}
+
+void bbcmcr(int Speed, float Kp, int distance, char select) {
+  int temp = set_position;
+  set_position = set_positionR;
+  bbcm(Speed, Kp, distance, select);
+  set_position = temp;
+}
+
+void bbcmcr(int Speed, float Kp, float Kd, int distance, char select) {
+  int temp = set_position;
+  set_position = set_positionR;
+  bbcm(Speed, Kp, Kd, distance, select);
   set_position = temp;
 }
 

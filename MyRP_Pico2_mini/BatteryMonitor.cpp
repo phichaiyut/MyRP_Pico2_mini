@@ -134,7 +134,7 @@ void BatteryMonitor::updateLEDs() {
   if (_voltage >= V_FULL) {
     pattern = 0xFF;
   } else if (_voltage >= V_EMPTY) {
-    int steps = (int)round((_voltage - V_EMPTY) / V_STEP);
+    int steps = (int)roundf((_voltage - V_EMPTY) / V_STEP);
     steps = constrain(steps, 0, 7);
     pattern = (1 << (steps + 1)) - 1;
   } else {

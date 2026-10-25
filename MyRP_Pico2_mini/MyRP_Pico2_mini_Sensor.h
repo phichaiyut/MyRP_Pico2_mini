@@ -1,6 +1,21 @@
 #ifndef MYRP_PICO2_MINI_SENSOR_H
 #define MYRP_PICO2_MINI_SENSOR_H
 
+/*
+ * MyRP_Pico2_mini_Sensor.h
+ * เซนเซอร์เส้น (MCP3008), EEPROM, คาลิเบรต และ Serial debug
+ *
+ * สารบัญ:
+ *   [1] ตัวแปรเซนเซอร์และค่าอ้างอิง
+ *   [2] อ่านค่า ADC ดิบ (MCP3008)
+ *   [3] EEPROM ภายนอก (I2C)
+ *   [4] EEPROM ในบอร์ด (local flash)
+ *   [5] คาลิเบรตเซนเซอร์ (calibrateA / B / C)
+ *   [6] โหลด / แสดงค่าคาลิเบรต
+ *   [7] อ่านเซนเซอร์ + แปลงเป็นค่าคาลิเบรต (ReadCalibrate)
+ *   [8] Serial debug (ทุกตัวเป็น while(1) ห้ามเรียกใน Mission)
+ */
+
 #define NUM_SENSORS 8
 #include <Wire.h>
 #include <Arduino.h>
@@ -14,15 +29,20 @@
 #define LOCAL_EEPROM_SIZE 128
 
 my_MCP3008s adc;
+
+// ======================================================================
+// [1] ตัวแปรเซนเซอร์และค่าอ้างอิง
+// ======================================================================
+
 int F[NUM_SENSORS], B[NUM_SENSORS], C[2];
 
 int sensorMaxA[8], sensorMinA[8];
 int sensorMaxB[8], sensorMinB[8];
 int sensorMaxC[2], sensorMinC[2];
 
-uint8_t F_PIN[NUM_SENSORS] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-uint8_t B_PIN[NUM_SENSORS] = { 7, 6, 5, 4, 3, 2, 1, 0 };
-uint8_t C_PIN[2] = { 26, 27 };
+const uint8_t F_PIN[NUM_SENSORS] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+const uint8_t B_PIN[NUM_SENSORS] = { 7, 6, 5, 4, 3, 2, 1, 0 };
+const uint8_t C_PIN[2] = { 26, 27 };
 
 // ใช้เฉพาะฟังก์ชันที่มี _LOCAL (เก็บ/โหลด EEPROM flash ของ Pico 2 ตัวนี้เอง)
 int minValueF[NUM_SENSORS], maxValueF[NUM_SENSORS];
@@ -47,7 +67,10 @@ int CENTER_MAX = 900;
 int BACK_MIN = 0;
 int BACK_MAX = 1000;
 
-// ==================== Sensor Reading ====================
+// ======================================================================
+// [2] อ่านค่า ADC ดิบ (MCP3008)
+// ======================================================================
+
 // หมายเหตุ: มี MCP3008 สองตัวอยู่บนบัส SPI (software SPI) เดียวกัน แยกกันด้วยขา CS
 // (13 = ชุด B, 17 = ชุด A) เนื่องจาก my_MCP3008s เก็บสถานะ CS ไว้ในอ็อบเจกต์เดียว (adc)
 // จึงต้องสลับ CS ก่อนอ่านทุกครั้ง — ใช้ adc.setCS() แทน adc.begin() เพราะ begin() ทำ
@@ -65,7 +88,10 @@ uint16_t read_sensorB(int sensor) {
   return adc.readADC(sensor);
 }
 
-// ==================== EEPROM Helper ====================
+// ======================================================================
+// [3] EEPROM ภายนอก (I2C)
+// ======================================================================
+
 void writeEEPROM(int deviceAddress, unsigned int eeAddress, byte *data, int dataLength) {
   Wire.beginTransmission(deviceAddress);
   Wire.write((int)(eeAddress >> 8));
@@ -91,7 +117,10 @@ void readEEPROM(int deviceAddress, unsigned int eeAddress, byte *buffer, int dat
   }
 }
 
-// ==================== EEPROM Helper (local flash, arduino-pico core) ====================
+// ======================================================================
+// [4] EEPROM ในบอร์ด (local flash)
+// ======================================================================
+
 void ensureEEPROMBegin_LOCAL() {
   static bool started = false;
   if (!started) {
@@ -115,28 +144,27 @@ void readEEPROM_LOCAL(unsigned int eeAddress, byte *buffer, int dataLength) {
   }
 }
 
-// ==================== Calibration Functions (เวอร์ชันสมบูรณ์) ====================
+// ======================================================================
+// [5] คาลิเบรตเซนเซอร์ (calibrateA / B / C)
+// ======================================================================
 
+// หา max/min ไปพร้อมกับการอ่าน ไม่ต้องเก็บทุก sample ไว้ก่อน
+// (เดิมใช้ int values[8][1000] = 32 KB บน stack เสี่ยง stack overflow ทับตัวแปรอื่น)
 void calibrateA() {
   const int samples = 1000;
-  int values[8][1000];
 
   Serial.println("กำลัง calibrate Sensor A (Line Front)...");
 
+  for (int i = 0; i < 8; i++) {
+    sensorMaxA[i] = 0;
+    sensorMinA[i] = 1023;  // MCP3008 = 10 บิต
+  }
   for (int s = 0; s < samples; s++) {
     for (int i = 0; i < 8; i++) {
-      values[i][s] = read_sensorA(i);
-      delay(1);
-    }
-  }
-
-  for (int i = 0; i < 8; i++) {
-    sensorMaxA[i] = values[i][0];
-    sensorMinA[i] = values[i][0];
-    for (int s = 1; s < samples; s++) {
-      int v = values[i][s];
+      int v = read_sensorA(i);
       if (v > sensorMaxA[i]) sensorMaxA[i] = v;
       if (v < sensorMinA[i]) sensorMinA[i] = v;
+      delay(1);
     }
   }
 
@@ -187,24 +215,19 @@ void saveCalibA_LOCAL() {
 
 void calibrateB() {
   const int samples = 1000;
-  int values[8][1000];
 
   Serial.println("กำลัง calibrate Sensor B (Line Back)...");
 
+  for (int i = 0; i < 8; i++) {
+    sensorMaxB[i] = 0;
+    sensorMinB[i] = 1023;  // MCP3008 = 10 บิต
+  }
   for (int s = 0; s < samples; s++) {
     for (int i = 0; i < 8; i++) {
-      values[i][s] = read_sensorB(i);
-      delay(1);
-    }
-  }
-
-  for (int i = 0; i < 8; i++) {
-    sensorMaxB[i] = values[i][0];
-    sensorMinB[i] = values[i][0];
-    for (int s = 1; s < samples; s++) {
-      int v = values[i][s];
+      int v = read_sensorB(i);
       if (v > sensorMaxB[i]) sensorMaxB[i] = v;
       if (v < sensorMinB[i]) sensorMinB[i] = v;
+      delay(1);
     }
   }
 
@@ -254,26 +277,22 @@ void saveCalibB_LOCAL() {
 
 void calibrateC() {
   const int samples = 1000;
-  const int PIN_C0 = 26;
-  const int PIN_C1 = 27;
-  int values[2][1000];
-
   Serial.println("กำลัง calibrate Sensor C (Side Sensors)...");
 
+  for (int i = 0; i < 2; i++) {
+    sensorMaxC[i] = 0;
+    sensorMinC[i] = 4095;  // ADC ในบอร์ด = 12 บิต
+  }
   for (int s = 0; s < samples; s++) {
-    values[0][s] = analogRead(PIN_C0);
-    values[1][s] = analogRead(PIN_C1);
+    for (int i = 0; i < 2; i++) {
+      int v = analogRead(C_PIN[i]);
+      if (v > sensorMaxC[i]) sensorMaxC[i] = v;
+      if (v < sensorMinC[i]) sensorMinC[i] = v;
+    }
     delay(5);
   }
 
   for (int i = 0; i < 2; i++) {
-    sensorMaxC[i] = 0;
-    sensorMinC[i] = 4095;
-    for (int s = 0; s < samples; s++) {
-      uint16_t v = values[i][s];
-      if (v > sensorMaxC[i]) sensorMaxC[i] = v;
-      if (v < sensorMinC[i]) sensorMinC[i] = v;
-    }
     sensorMaxC[i] = constrain(sensorMaxC[i], 0, 4000);
     sensorMinC[i] = constrain(sensorMinC[i], 0, 4000);
   }
@@ -322,7 +341,9 @@ void saveCalibC_LOCAL() {
   Serial.println("✓ บันทึก Calibrate Sensor C ลง EEPROM (LOCAL) เสร็จสิ้น");
 }
 
-// ==================== Load & Print Calibration ====================
+// ======================================================================
+// [6] โหลด / แสดงค่าคาลิเบรต
+// ======================================================================
 
 void read_eepA() {
   byte buf[16];
@@ -447,6 +468,10 @@ void loadCalibration_LOCAL() {
   printCalibration_LOCAL();
 }
 
+// ======================================================================
+// [7] อ่านเซนเซอร์ + แปลงเป็นค่าคาลิเบรต (ReadCalibrate)
+// ======================================================================
+
 void ReadF() {
   for (int i = 0; i < NUM_SENSORS; i++) {
     F[i] = read_sensorA(F_PIN[i]);
@@ -555,7 +580,9 @@ void RefCenterLineValue(int x) {
   RefC = x;
 }
 
-// ==================== Serial Debug (ทุกตัวเป็น while(1) ห้ามเรียกใน Mission) ====================
+// ======================================================================
+// [8] Serial debug (ทุกตัวเป็น while(1) ห้ามเรียกใน Mission)
+// ======================================================================
 
 void Serial_FrontSensor() {
   while (1) {

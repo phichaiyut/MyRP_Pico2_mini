@@ -1,7 +1,22 @@
 #ifndef MYRP_PICO2_MINI_MOTOR_H
 #define MYRP_PICO2_MINI_MOTOR_H
 
+/*
+ * MyRP_Pico2_mini_Motor.h
+ * ขับมอเตอร์ ชดเชยแบตเตอรี่ และตารางความเร็ว / PID ตามความเร็ว
+ *
+ * สารบัญ:
+ *   [1] ขามอเตอร์ / ชดเชยแรงดันแบตเตอรี่
+ *   [2] ขับมอเตอร์ (Motor / Move / MotorStop / MotorShot)
+ *   [3] ตารางความเร็ว / PID / เวลาเบรก ตามช่วงความเร็ว
+ *   [4] เคลื่อนที่พื้นฐาน (fd, bk, sl, sr, tl, tr)
+ */
+
 #include "BatteryMonitor.h"
+
+// ======================================================================
+// [1] ขามอเตอร์ / ชดเชยแรงดันแบตเตอรี่
+// ======================================================================
 
 #define PWMA 19
 #define AIN1 20
@@ -17,8 +32,6 @@ bool DC_Motors = true;
 
 BatteryMonitor bat;
 
-/* ---------- battery compensation ---------- */
-
 inline void updateBattery() {
   bat.update();
 }
@@ -28,7 +41,7 @@ inline float getBatteryVoltage() {
 
 float scale = 1.0f;
 
-void set_Freq(String type) {
+void set_Freq(const String &type) {
   if (type == "Coreless_Motors" || type == "coreless") {
     DC_Motors = false;
     analogWriteFreq(20000);
@@ -44,7 +57,7 @@ void bat_control() {
   float voltage = getBatteryVoltage();
 
   if (voltage > 0.5f && voltage >= VMIN && voltage <= VMAX) {
-    scale = pow(VNOM / voltage, 0.95f);
+    scale = powf(VNOM / voltage, 0.95f);
   } else {
     scale = 1.0f;
   }
@@ -53,7 +66,9 @@ void bat_control() {
   scale = constrain(scale, 0.95f, 1.05f);
 }
 
-/* ---------- motor driver ---------- */
+// ======================================================================
+// [2] ขับมอเตอร์ (Motor / Move / MotorStop / MotorShot)
+// ======================================================================
 
 void Motor(int left, int right) {
   updateBattery();
@@ -140,6 +155,10 @@ void MotorShot(int t = 3, int power = 90) {
   MotorStop();
 }
 
+// ======================================================================
+// [3] ตารางความเร็ว / PID / เวลาเบรก ตามช่วงความเร็ว
+// ======================================================================
+
 int BaseSpeed, LeftBaseSpeed, RightBaseSpeed, BackLeftBaseSpeed, BackRightBaseSpeed;
 float PID_KP_Front, PID_KD_Front;
 float PID_KP_Back, PID_KD_Back;
@@ -151,8 +170,6 @@ float KP[10], KD[10];
 float KP_Back[10], KD_Back[10];
 int delay_break_f_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
 int delay_break_b_table[10] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
-
-/* ---------- speed/PID tables ---------- */
 
 // ดัชนีตารางความเร็ว (ใช้กับ setBalanceSpeed/Set_KP_KD ฯลฯ)
 #define SPD_10 0
@@ -191,6 +208,10 @@ void SetDelayBreak(int ch, int delay_f, int delay_b) {
   delay_break_b_table[ch] = delay_b;
 }
 
+int LastError_F, LastError_B;            // ค่า error ก่อนหน้าของ PIDF / PIDB
+int LastError_F_none, LastError_B_none;  // ค่า error ก่อนหน้าของ PID แบบ _none
+void resetGyroRunError();                // อยู่ใน Gyro.h: รีเซ็ต previous_errorG / previous_errorGB
+
 // เลือกชุดค่าความเร็ว/PID ตามช่วงของ BaseSpeed (ปัดขึ้นเป็นสิบ เช่น 35 ใช้ชุดของ 40)
 // เดิมเป็น if/else 10 ชุดที่โครงสร้างเหมือนกันทุกอัน ต่างแค่ index ตาราง จึงรวมเป็นสูตรเดียว:
 // ดัชนี 0-9 คำนวณจาก (BaseSpeed - 1) / 10 แล้วจำกัดไม่ให้เกิน SPD_100 (ผลลัพธ์เหมือนเดิมทุกกรณี)
@@ -207,9 +228,16 @@ void InitialSpeed() {
   PID_KD_Back = KD_Back[idx];
   delay_break_f = delay_break_f_table[idx];
   delay_break_b = delay_break_b_table[idx];
+  LastError_F = 0;  // รีเซ็ต D-term ไม่ให้ค้างจากคำสั่งก่อนหน้า
+  LastError_B = 0;
+  LastError_F_none = 0;
+  LastError_B_none = 0;
+  resetGyroRunError();  // previous_errorG / previous_errorGB = error ปัจจุบัน
 }
 
-/* ---------- preset moves ---------- */
+// ======================================================================
+// [4] เคลื่อนที่พื้นฐาน (fd, bk, sl, sr, tl, tr)
+// ======================================================================
 
 void fd(int Speed, int time_ms) {
   BaseSpeed = Speed;

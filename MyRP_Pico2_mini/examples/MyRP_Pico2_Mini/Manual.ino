@@ -1,519 +1,339 @@
-/* =====================================================
-   📘 คู่มือคำสั่งไลบรารี MyRP_Pico2_mini
-   ไฟล์นี้เป็น comment ล้วน ไม่มีผลต่อการคอมไพล์
+/* ==========================================================================
+   📘  คู่มือคำสั่ง MyRP_Pico2_mini
+       (ไฟล์นี้เป็น comment ล้วน ไม่มีผลกับโค้ด)
+       กด Ctrl+F แล้วพิมพ์ [1] [2] ... เพื่อกระโดดไปหมวดที่ต้องการ
+   --------------------------------------------------------------------------
+   [1]  โครงโปรแกรม / ความหมายพารามิเตอร์     [9]  Gyro พื้นฐาน / ล็อกมุม
+   [2]  ตั้งค่า (Setting.ino)                    [10] Gyro หมุน / เลี้ยว
+   [3]  ตารางคำสั่งทางแยก 'select'              [11] Gyro วิ่งตรง
+   [4]  เดินตามเส้น เดินหน้า  ff...              [12] มอเตอร์ / แบตเตอรี่
+   [5]  เดินตามเส้น ถอยหลัง  bb...              [13] แขน / เซอร์โว
+   [6]  วิ่งโค้ง cl / cr                         [14] เซนเซอร์ / Calibrate
+   [7]  เข้ากึ่งกลาง / ออกตัว / เข้าเส้นชัย       [15] Debug (Serial Monitor)
+   [8]  หมุน / เลี้ยว ด้วยเซนเซอร์เส้น            [16] เสียง / ไฟ
+   ========================================================================== */
 
-   เริ่มต้นใน setup():
-     RobotSetup();   // เริ่มระบบ (Serial, I2C, ADC, โหลดค่า calibrate, IMU)
-     Setting();      // ตั้งค่าพารามิเตอร์ของหุ่น
-     sw();           // เมนูคาลิเบรตเซนเซอร์ผ่านปุ่มกด
-     Mission();      // โค้ดภารกิจ
-   ===================================================== */
-
-/* =====================================================
-   🛠️ SETTING.INO — คู่มือฟังก์ชันตั้งค่าทั้งหมด
-   (เรียงตามลำดับที่ปรากฏใน Setting.ino)
-   ===================================================== */
-
-// ── มอเตอร์ ──────────────────────────────────────────
-// set_Freq("Coreless_Motors" หรือ "coreless")   // มอเตอร์คอร์เลส -> PWM 20kHz (เงียบ)
-// set_Freq("DC_Motors" หรือค่าอื่น ๆ)             // มอเตอร์ DC ทั่วไป -> PWM 1kHz (ค่าเริ่มต้น)
-
-// ── คาลิเบรตเซนเซอร์ (ช่วงค่าหลังคาลิเบรต 0-1000) ──────
-// clampSensorValueF(min, max);   // ค่านอกช่วงนี้ (เซนเซอร์หน้า) จะถูกปัดเป็น 0 หรือ 1000
-// clampSensorValueB(min, max);   // เหมือนกันแต่เป็นเซนเซอร์หลัง
-// clampSensorValueC(min, max);   // เหมือนกันแต่เป็นเซนเซอร์คู่กลาง
-// ตัวอย่าง: clampSensorValueF(100, 800);  // ต่ำกว่า 100 -> 0, สูงกว่า 800 -> 1000
-
-// ── ตั้งค่าเซนเซอร์เส้น ────────────────────────────────
-// RefLineValue(x);         // threshold ตัดสินว่า "เจอเส้น" ของเซนเซอร์แถวหน้า-หลัง (0-1000)
-// RefCenterLineValue(x);   // threshold ตัดสินว่า "เจอเส้น" ของเซนเซอร์คู่กลาง (0-1000)
-// TrackLineColor(0);       // 0 = พื้นขาวเส้นดำ | 1 = พื้นดำเส้นขาว
-// Dottedline(0);           // 0 = เส้นทึบปกติ | 1 = สนามมีเส้นประ (กันหลุดเส้นตอนเจอช่องว่าง)
-
-// ── โหมดเข้ากึ่งกลางทางแยก ─────────────────────────────
-// set_line_center(0);        // เดินธรรมดาแล้วเข้ากึ่งกลางหุ่น (ไม่สนเส้น)
-// set_line_center(1);        // เดินตามเส้น PID แล้วค่อยเข้ากึ่งกลางหุ่น
-// SetToCenterSpeed(speed);   // ความเร็วที่ใช้ตอนเข้ากึ่งกลาง (ToCenter/ToCenterL/ToCenterR ฯลฯ)
-// set_brake_fc(ff, fc);      // ff: ⚠️ ตัวแปร break_ff ไม่ถูกอ่านที่ไหนในไลบรารีแล้ว (ใส่เท่าไหร่ก็ไม่มีผล)
-//                            // fc: เวลาเบรก (ms) ตอนเข้ากึ่งกลาง ToCenter/ToCenterL/ToCenterR (เส้น) และ ToCenterLG/ToCenterRG/ToCenterLRG (gyro) ค่าเริ่มต้น 30
-// set_brake_bc(bf, bc);      // bf: ⚠️ ตัวแปร break_bf ก็ไม่ถูกอ่านที่ไหนเช่นกัน
-//                            // bc: เวลาเบรก (ms) ตอน BackCenter (เส้น) และ BackCenterG (gyro) ค่าเริ่มต้น 20
-
-// ── ความเร็วเลี้ยว/หมุน ────────────────────────────────
-// SetTurnSpeed(speed);              // ความเร็ว default ของ spinl()/spinr() (เมื่อไม่ระบุ speed เอง)
-// TurnSpeedLeft(l, r, delay);       // ความเร็วล้อซ้าย/ขวา + เวลาหน่วง ตอน TurnLeft() (เลี้ยว q/Q)
-// TurnSpeedRight(l, r, delay);      // เหมือนกันแต่ TurnRight() (เลี้ยว e/E)
-// SetSensorTurnLeftRight(l, r);     // เซนเซอร์หน้าที่หยุดเลี้ยว TurnLeft (กวาด F[0..l]) / TurnRight (กวาด F[7..r])
-// TurnBackSpeedLeft(l, r, delay);   // เหมือน TurnSpeedLeft แต่ใช้ตอนถอยหลัง (TurnLeft_B)
-// TurnBackSpeedRight(l, r, delay);  // เหมือน TurnSpeedRight แต่ใช้ตอนถอยหลัง (TurnRight_B)
-// TurnSpeedLeftBackF(l, r, delay);  TurnSpeedRightBackF(l, r, delay);   // ตั้งค่าให้ TurnLeftBackF()/TurnRightBackF() (ถอยเลี้ยวล้อเดียว เช็คเซนเซอร์หน้า F[])
-// TurnSpeedLeftBackB(l, r, delay);  TurnSpeedRightBackB(l, r, delay);   // ตั้งค่าให้ TurnLeftBackB()/TurnRightBackB() (ถอยเลี้ยวล้อเดียว เช็คเซนเซอร์หลัง B[])
-// ⚠️ ค่า l, r ของทุก TurnSpeed*() ถูกส่งเข้า Motor() ตรง ๆ แบบมีเครื่องหมาย (ติดลบ = ล้อหมุนถอย)
-//    เช่น TurnSpeedLeft(-20, 70, 40) = ล้อซ้ายถอย 20 ล้อขวาไปหน้า 70 | ใส่ 0 = ล้อนั้นหยุด (เลี้ยวล้อเดียว)
-
-// ── โหมดควบคุมความเร็ว PID ──────────────────────────────
-// ModeSpdPID(mode, max, min);   // mode: โหมดคุมความเร็ว | max/min: ขอบเขตความเร็วที่ PID ปรับได้
-// SetPIDDeadBand(db);           // error ต่ำกว่านี้ (หน่วยเดียวกับ set_position_line) มองเป็น 0 กันสั่น (default 20)
-
-// ── ตำแหน่งเส้นเป้าหมาย (0-7000, กลางแท่นเซนเซอร์ ≈ 3500) ──
-// set_position_line(pos);     // ตำแหน่งเดินตรงกลาง | ต่ำ=เข้าซ้าย สูง=เข้าขวา
-// set_position_line_l(pos);   // ตำแหน่งใช้ตอนวิ่งโค้งซ้าย (ffcl/bbcl ฯลฯ)
-// set_position_line_r(pos);   // ตำแหน่งใช้ตอนวิ่งโค้งขวา (ffcr/bbcr ฯลฯ)
-
-// ── เซนเซอร์วัดระยะ ────────────────────────────────────
-// SetAnalogDistance(pin);   // กำหนดขา analog (A0-A3) ที่ต่อเซนเซอร์วัดระยะ
-
-// ── DEBUG / SERIAL MONITOR (เรียกใน Setting() ได้ทีละตัว, เป็น while(1) ห้ามใช้ใน Mission()) ──
-// SerialDistance();                  // อ่านค่าเซนเซอร์วัดระยะทาง Serial
-// Serial_FrontSensor();              // ค่าดิบเซนเซอร์หน้า
-// Serial_BackSensor();               // ค่าดิบเซนเซอร์หลัง
-// Serial_CenterSensor();             // ค่าดิบเซนเซอร์กลาง
-// Serial_AllSensor();                // ค่าดิบเซนเซอร์รวมทุกตัว
-// SerialCalibrate_FrontSensor();     // ค่าหลังคาลิเบรต (0-1000) เซนเซอร์หน้า
-// SerialCalibrate_BackSensor();      // ค่าหลังคาลิเบรต (0-1000) เซนเซอร์หลัง
-// SerialCalibrate_CenterSensor();    // ค่าหลังคาลิเบรต (0-1000) เซนเซอร์กลาง
-// SerialCalibrate_AllSensor();       // ค่าหลังคาลิเบรตรวมทุกตัว
-// SerialPositionF();                 // ตำแหน่งเส้นที่คำนวณได้ (หน้า) เทียบกับ set_position_line
-// SerialPositionB();                 // ตำแหน่งเส้นที่คำนวณได้ (หลัง)
-// SerialPositionFB();                // ตำแหน่งเส้นที่คำนวณได้ (หน้า-หลัง พร้อมกัน)
-
-// ── RobotSetupSpeed() : ตารางความเร็วต่อช่วง (เรียกจาก Setting()) ──
-// ดัชนีช่วงความเร็ว: SPD_10, SPD_20, SPD_30, SPD_40, SPD_50, SPD_60, SPD_70, SPD_80, SPD_90, SPD_100
+/* ==========================================================================
+   [1] โครงโปรแกรม / ความหมายพารามิเตอร์
+   ========================================================================== */
 //
-// setBalanceSpeed(ch, l, r);        // ชดเชยความแรงมอเตอร์ซ้าย/ขวาตอนเดินหน้า ที่ช่วงความเร็ว ch (ข้างไหนแรงกว่า เพิ่มค่าข้างนั้น)
-// setBalanceBackSpeed(ch, l, r);    // เหมือนกันแต่ตอนถอยหลัง
-// Set_KP_KD(ch, kp, kd);            // ค่า PID (Kp, Kd) เดินตามเส้น ที่ช่วงความเร็ว ch
-// Set_KP_KD_Back(ch, kp, kd);       // ค่า PID (Kp, Kd) เดินตามเส้นตอนถอยหลัง ที่ช่วงความเร็ว ch
-// SetDelayBreak(ch, f, b);          // เวลาเบรก (ms) ตอนหยุดที่เส้น ที่ช่วงความเร็ว ch (f=เดินหน้า b=ถอยหลัง)
-// ตัวอย่าง: Set_KP_KD(SPD_60, 0.018, 0.20);  // ตั้ง Kp=0.018, Kd=0.20 ให้ความเร็วช่วง 60
-
-/* =====================================================
-   7️⃣ ตารางคำสั่งเมื่อเจอแยก (select Command Table) — ฉบับละเอียด
-   ใช้กับพารามิเตอร์ตัวสุดท้ายของฟังก์ชันตระกูล ff, bb และ *g (เวอร์ชัน gyro) ทั้งหมด
-   อ้างอิงพฤติกรรมจริงจาก TrackSelectF/TrackSelectB (MyRP_Pico2_mini_PID.h)
-   และ TrackSelectG/TrackSelectGB (MyRP_Pico2_mini_Gyro.h)
-   =====================================================
- *
- *   ---------- (A) ตระกูลปกติ (เส้น PID): ff* → TrackSelectF | bb* → TrackSelectB ----------
- *
- *   's' : เบรกหยุดทันที ไม่รอเช็คเซนเซอร์ (ถือว่าอยู่ตรงจุดหยุดพอดีแล้ว) — ff: Motor(-spd,-spd) | bb: Motor(spd,spd)
- *          เบรก delay_break_f (ff) / delay_break_b (bb) ms แล้ว MotorStop() — ค่านี้มาจากตาราง SetDelayBreak(ch,...) ตามช่วงความเร็วปัจจุบัน ไม่ใช่ spd ที่ส่งเข้าฟังก์ชัน
- *          ⚠️ ไม่มี MotorShot()/เบรกกระชากแบบ back-EMF ให้ 's' ของ bb อีกแล้ว (รุ่นก่อนมี เวอร์ชันนี้ตัดออก) ตามด้วย MotorStop(2) (เบรกแล้วบี๊บ 2ms)
- *   'S' : วิ่ง PID ตามเส้นต่อก่อนจนเซนเซอร์ขอบเจอเส้น (ff: F[0]/F[7] | bb: B[0]/B[7]) แล้วเบรกด้วย tctL/tctR (ff) หรือ bctL/bctR (bb)
- *          เป็นเวลา tct_delay_break / bct_delay_break ms (= delay_break_f/_b ที่ความเร็ว tct/bct ขณะเรียก SetToCenterSpeed()) แล้ว MotorStop()/MotorStop(2)
- *   'p' || 'P' : วิ่งทะลุผ่านทางแยก/เส้นขวางด้วยความเร็ว spd ตรง ๆ (ไม่ใช้ PID) จนสองเซนเซอร์ริมพ้นเส้น (เช็คซ้ำ 2 รอบกันสัญญาณรบกวน) มีเสียง buzzer ระหว่างวิ่งผ่าน
- *                'P' ต่างจาก 'p' แค่เรียก ToFront()/ToBack() วิ่งเข้าหาเส้นด้วย PID ก่อนเริ่มนับเงื่อนไข
- *   'c' || 'C' : เข้ากึ่งกลางทางแยกแล้วหยุด (ToCenter()/BackCenter()) | 'C' เรียก ToFront()/ToBack() ก่อน
- *                ก่อนหยุดมีพัลส์เบรกสวนทิศ ระยะเวลา break_fc (ff) / break_bc (bb) ms — ปรับด้วย set_brake_fc()/set_brake_bc()
- *   'l' || 'L' : เข้ากึ่งกลางทางแยกแล้วหมุนซ้าย 90° (spinl()) — พิมพ์เล็ก/ใหญ่ทำงาน "เหมือนกันทุกประการ" ในตระกูลนี้ (case ถูก fall-through รวมกัน)
- *   'r' || 'R' : เข้ากึ่งกลางทางแยกแล้วหมุนขวา 90° (spinr()) — พิมพ์เล็ก/ใหญ่เหมือนกัน
- *   'q' || 'Q' : ff = เดินหน้าด้วย tctL/tctR จนเซนเซอร์ F[0] และ F[7] พ้นเส้นทั้งคู่ → หน่วง TurnDelayL ms (ยังไหลด้วยความเร็วเดิม ไม่เบรก) → TurnLeft()
- *                bb = ถอยด้วย bctL/bctR จนเซนเซอร์ B[0] และ B[7] พ้นเส้นทั้งคู่ → หน่วง TurnBackDelayR ms → TurnRight_B()  ⚠️ ทิศสลับกับ ff!
- *                TurnLeft()/TurnRight()/TurnLeft_B()/TurnRight_B() กวาดเซนเซอร์ตาม SetSensorTurnLeftRight()/_B() ที่ตั้งไว้ (ดูหมวด "เลี้ยว/หมุน")
- *   'e' || 'E' : ff = เงื่อนไขเดียวกับ q แต่หน่วง TurnDelayR ms แล้วจบด้วย TurnRight()
- *                bb = เงื่อนไขเดียวกับ q แต่หน่วง TurnBackDelayL ms แล้วจบด้วย TurnLeft_B()  ⚠️ ทิศสลับกับ ff!
- *                ('Q'/'E' ต่างจากตัวพิมพ์เล็กแค่เรียก ToFront()/ToBack() ก่อนเข้าเงื่อนไข)
- *                ⚠️ ตัวแปร break_ff (จาก set_brake_fc()) ไม่ถูกใช้แล้วในทุกเคสนี้ — ความล่าช้าก่อนเลี้ยวมาจาก TurnDelayL/R, TurnBackDelayL/R เท่านั้น
- *   'a' || 'A' : เข้ากึ่งกลางแล้วหมุนซ้ายด้วยเซนเซอร์หลัง (spinl_B()) — ทำงานเหมือนกันทั้ง ff/bb (ไม่สลับทิศแบบ q/e)
- *   'd' || 'D' : เข้ากึ่งกลางแล้วหมุนขวาด้วยเซนเซอร์หลัง (spinr_B()) — ทำงานเหมือนกันทั้ง ff/bb
- *   'b' || 'B' : เข้ากึ่งกลาง (ModeToCenter/ModeToCenterBack) แล้ววิ่งต่อจนเซนเซอร์ "ฝั่งตรงข้ามทิศทางวิ่ง" เจอเส้น (ff เช็ค B[] | bb เช็ค F[])
- *                เบรกด้วย tct_delay_break (ff) / bct_delay_break (bb) ms แล้วสะบัดกลับ ทิศตรงข้ามการวิ่ง 1ms แล้ว MotorStop()
- *                ⚠️ ตัวพิมพ์เล็ก 'b' ของ ff มีพัลส์สะบัดกลับนี้ แต่ 'B' (ตัวใหญ่) ของ ff ไม่มี — bb ไม่สลับ 'b'/'B' ทำงานเหมือนกัน (case รวมกัน)
- *   'g' || 'G' : เรียก SetFG(spd) ปรับตรงมุมด้วย gyro ค้างไว้ spd มิลลิวินาที (ใช้ค่า spd ที่ส่งเข้าฟังก์ชันตรง ๆ ไม่ใช่ 100ms คงที่) | 'G' เรียก ToFront()/ToBack() ก่อน
- *   อื่น ๆ (default) : MotorStop(spd) หยุดพร้อม beep เป็นเวลา spd มิลลิวินาที (ไม่ใช่ 20ms คงที่)
- *
- *   ---------- (B) ตระกูล gyro (RunG/RunGB): *g → TrackSelectG | *g...B → TrackSelectGB ----------
- *
- *   'L' : หมุนทันที 90° ซ้ายด้วย gyro (spindegree(-90)) โดย "ไม่" เข้ากึ่งกลางก่อน — G และ GB เรียกเหมือนกันทุกตัวอักษร ไม่กลับทิศ
- *   'l' : เข้ากึ่งกลางทางแยกด้วย gyro ก่อน แล้วค่อยหมุนซ้าย 90° — G ใช้ ToCenterLRG() (เจอเส้นข้างซ้ายหรือขวาก็ได้) | GB ใช้ BackCenterG()
- *         ⚠️ G เปลี่ยนจาก ToCenterLG() (เฉพาะเส้นซ้าย) มาเป็น ToCenterLRG() (เส้นซ้ายหรือขวาก็ได้) แล้ว — 'l' และ 'r' ของ G ใช้ฟังก์ชันเข้ากึ่งกลางตัวเดียวกัน ต่างกันแค่ทิศหมุนตอนจบ
- *   'R' : หมุนทันที 90° ขวาด้วย gyro (spindegree(90)) ไม่เข้ากึ่งกลางก่อน
- *   'r' : เข้ากึ่งกลางด้วย gyro ก่อน (G: ToCenterLRG() | GB: BackCenterG()) แล้วค่อยหมุนขวา 90°
- *         ⚠️ ต่างจากตระกูล (A): ที่นี่ตัวพิมพ์เล็ก 'l'/'r' (เข้ากึ่งกลางก่อนค่อยหมุน) กับตัวพิมพ์ใหญ่ 'L'/'R' (หมุนทันที ไม่เข้ากึ่งกลาง)
- *         มีความหมาย "ต่างกันจริง" ไม่เหมือนตระกูล (A) ที่พิมพ์เล็ก/ใหญ่เท่ากัน — ระวังเผลอใช้ตัวพิมพ์ผิด
- *   'q' || 'Q' : G  = เลี้ยวโค้งซ้าย (turndegree(-90))
- *                GB = เลี้ยวโค้ง "ขวา" (turndegreeb(90))  ⚠️ ทิศสลับกับ G เหมือน pattern ของตระกูล (A)
- *   'e' || 'E' : G  = เลี้ยวโค้งขวา (turndegree(90))
- *                GB = เลี้ยวโค้ง "ซ้าย" (turndegreeb(-90))  ⚠️ ทิศสลับกับ G
- *   'p' || 'P' : วิ่งทะลุผ่านทางแยกด้วย gyro (RunG/RunGB) จนพ้นเส้น 2 รอบ แทรก fftimerg/bbtimerg สั้น ๆ (5ms) กลางทาง มีเสียง buzzer
- *                พิมพ์เล็ก/ใหญ่เหมือนกัน — ไม่มี ToFront()/ToBack() นำหน้าแบบตระกูล (A)
- *   'c' || 'C' : ปรับตรง gyro 20 รอบ แล้ววิ่งต่อจนเซนเซอร์ C[] เจอกึ่งกลางทางแยก แล้วเบรกด้วย Motor(-spd,-spd)/Motor(spd,spd) (พิมพ์เล็ก/ใหญ่เหมือนกัน)
- *                เบรก tct_delay_break ms (G) / delay_break_b ms (GB) ⚠️ GB ใช้ตารางเบรกตามความเร็ว ไม่ใช่ bct_delay_break แบบที่ G ใช้ tct_delay_break
- *   'b' || 'B' : ปรับตรง gyro 20 รอบ วิ่งเข้ากึ่งกลาง (C[]) ก่อน แล้ววิ่งต่อจนเซนเซอร์ B[] เจอเส้นอีกครั้ง (ทั้ง G และ GB เช็ค B[] เหมือนกัน แม้ GB กำลังถอยหลัง)
- *                เบรกด้วย tct_delay_break (G) / bct_delay_break (GB) ms แล้วสะบัดกลับ 1ms แล้วหยุด
- *   's' : เบรกสั้น ๆ ทันที ไม่รอเงื่อนไข — G: Motor(-spd,-spd) เบรก delay_break_f ms แล้วหยุด
- *                                         GB: Motor(spd,spd) เบรก delay_break_b ms แล้วสะบัดกลับ 1ms แล้วหยุด (ไม่สมมาตรกับ G)
- *   'S' : วิ่งตรงด้วย gyro ต่อก่อนจนเซนเซอร์ F[1..6] (G: ToFrontG()) / B[1..6] (GB: ToBackG()) เจอเส้น
- *                G: เบรกด้วย tctL/tctR เป็นเวลา tct_delay_break ms แล้วหยุด | GB: เบรกด้วย bctL/bctR เป็นเวลา bct_delay_break ms แล้วสะบัดกลับ 1ms แล้วหยุด
- *   'G' : วิ่งตรงด้วย gyro จนเจอเส้น (ToFrontG()/ToBackG()) แล้วล็อกมุมด้วย SetG(tct_delay_break) (G) / SetG(bct_delay_break) (GB)
- *   'g' และ 'a'/'A', 'd'/'D' : ⚠️ ไม่มี case รองรับในตระกูลนี้ ตกไปเงื่อนไข else เหมือนอักขระอื่น ๆ ที่ไม่รู้จัก → เรียก SetG(spd) ทันที (ใช้ค่า spd ที่ส่งเข้ามา ไม่ใช่ 100ms คงที่)
- *                                 (ไม่ใช่ SetFG แบบตระกูล (A) และแม้แต่ TrackSelectGB ก็เรียก SetG(spd) ไม่ใช่ SetGB)
- */
-
-/* =====================================================
-   🚗 LINE FOLLOW PID : FORWARD (ff)
-   ===================================================== */
-
-// ทั่วไป
-// ff(speed, 'คำสั่งทางแยก');
-// ตัวอย่าง: ff(100, 'p');
-
-// กลาง / ซ้าย / ขวา
-// ffc(speed, 'คำสั่งทางแยก');     | ffc2(speed, 'คำสั่งทางแยก');
-// ffl(speed, 'คำสั่งทางแยก');     | ffl2(speed, 'คำสั่งทางแยก'); | ffl0(speed, 'คำสั่งทางแยก');
-// ffr(speed, 'คำสั่งทางแยก');     | ffr2(speed, 'คำสั่งทางแยก'); | ffr7(speed, 'คำสั่งทางแยก');
-
-// ระบุเซนเซอร์ / ระยะ
-// ffnum(speed, 'คำสั่งทางแยก', 0-7);
-// ff_distance(speed, 'คำสั่งทางแยก', dist);
-// ffd(speed, 'คำสั่งทางแยก', dist);
-// ffds(speed, 'คำสั่งทางแยก', ir_target);        // = ff_distances(...) เหมือน ffd แต่ค่อยๆ เบรกเข้าเป้าหมาย (ลดความเร็วด้วย PID ตามระยะ)
-
-// เจอ / ไม่เจอเส้น
-// ffwhite(speed, 'คำสั่งทางแยก');
-// ffblack(speed, 'คำสั่งทางแยก');
-// ffw(speed, 'คำสั่งทางแยก');
-// ffb(speed, 'คำสั่งทางแยก');
-
-/* =====================================================
-   🔙 LINE FOLLOW PID : BACKWARD (bb)
-   ===================================================== */
-
-// ทั่วไป
-// bb(speed, 'คำสั่งทางแยก');
-
-// กลาง / ซ้าย / ขวา
-// bbc(speed, 'คำสั่งทางแยก');     | bbc2(speed, 'คำสั่งทางแยก');
-// bbl(speed, 'คำสั่งทางแยก');     | bbl2(speed, 'คำสั่งทางแยก'); | bbl0(speed, 'คำสั่งทางแยก');
-// bbr(speed, 'คำสั่งทางแยก');     | bbr2(speed, 'คำสั่งทางแยก'); | bbr7(speed, 'คำสั่งทางแยก');
-
-// ระบุเซนเซอร์ / ระยะ
-// bbnum(speed, 'คำสั่งทางแยก', 0-7);
-// bb_distance(speed, 'คำสั่งทางแยก', dist);
-// bbd(speed, 'คำสั่งทางแยก', dist);
-// (ไม่มี bb_distances/bbds — ฟังก์ชันเบรกนุ่มนวลมีเฉพาะฝั่งหน้า)
-
-// เจอ / ไม่เจอเส้น
-// bbwhite(speed, 'คำสั่งทางแยก');
-// bbblack(speed, 'คำสั่งทางแยก');
-// bbw(speed, 'คำสั่งทางแยก');
-// bbb(speed, 'คำสั่งทางแยก');
-
-/* =====================================================
-   ⏱️ LINE FOLLOW PID : TIMER / DISTANCE
-   ===================================================== */
-
-// ไม่มีคำสั่ง
-// fftimer(speed, time);
-// bbtimer(speed, time);
-
-// มีคำสั่ง
-// fftimer(speed, time, 'คำสั่งทางแยก');    | fft(speed, time, 'คำสั่งทางแยก');    // fft = alias ของ fftimer (ต้องมี select เสมอ)
-// bbtimer(speed, time, 'คำสั่งทางแยก');    | bbt(speed, time, 'คำสั่งทางแยก');    // bbt = alias ของ bbtimer (ต้องมี select เสมอ)
-
-// ระยะทาง (ประมาณหน่วย ซม.)
-// ffcm(speed, cm);
-// bbcm(speed, cm);
-// ffcm(speed, cm, 'คำสั่งทางแยก');
-// bbcm(speed, cm, 'คำสั่งทางแยก');
-
-/* =====================================================
-   🎯 CENTER ALIGNMENT (เข้ากึ่งกลางทางแยก)
-   ===================================================== */
-
-// เดินหน้า
-// ToCenter();     // เจอเส้นข้างซ้ายหรือขวาก็ได้
-// ToCenterL();    // เจอเส้นข้างซ้าย
-// ToCenterR();    // เจอเส้นข้างขวา
-// ToFront();      // วิ่ง PID ไปข้างหน้าจนเซนเซอร์หน้าเจอขอบเส้น F[0]/F[7] (ใช้ tctL/tctR)
-
-// ถอยหลัง
-// BackCenter();   // เจอเส้นข้างซ้ายหรือขวาก็ได้
-// ToBack();       // วิ่ง PID ถอยหลังจนเซนเซอร์หลังเจอขอบเส้น B[0]/B[7] (ใช้ bctL/bctR)
-
-// จัดตำแหน่งกึ่งกลางเส้นแบบละเอียด (ตอนวางหุ่นก่อนเริ่ม)
-// set_f(num);   set_fc(num);      // ด้านหน้า (เซนเซอร์ล้อ / เซนเซอร์ข้าง)
-// set_b(num);   set_bc(num);      // ด้านหลัง
-// balancef(num) / setf(num);      // จัดหุ่นให้ตรงเส้นด้านหน้าด้วยเซนเซอร์ล้อ F[] ทำซ้ำ num รอบ
-// balanceb(num) / setb(num);      // จัดหุ่นให้ตรงเส้นด้านหลังด้วยเซนเซอร์ล้อ B[] ทำซ้ำ num รอบ
-// balancefc(num) / setfc(num);    // จัดหุ่นให้ตรงเส้นด้านหน้าด้วยเซนเซอร์คู่กลาง C[] ทำซ้ำ num รอบ
-// balancebc(num) / setbc(num);    // จัดหุ่นให้ตรงเส้นด้านหลังด้วยเซนเซอร์คู่กลาง C[] ทำซ้ำ num รอบ
-
-// ▶ ออกตัว / เข้าเส้นชัย
-// gostart(speed);              gostart(LeftSpeed, RightSpeed);   // เดินหน้าออกจากเส้นเริ่มต้น จนเซนเซอร์หน้าหลุดเส้น (F[0]/F[7] ไม่เจอเส้นแล้ว)
-// goend(speed);                goend(LeftSpeed, RightSpeed);     // เดินหน้าจนเซนเซอร์กลางทั้งคู่เจอเส้น (เข้าเส้นชัย) แล้วเบรกหยุด
-
-// ▶ เรียกจัดการ "คำสั่งทางแยก" ตรง ๆ (ปกติ ff/bb ทุกตัวเรียกให้อัตโนมัติเมื่อเจอทางแยกอยู่แล้ว
-//    ใช้เองเฉพาะกรณีเช็คเงื่อนไขเจอทางแยกเองแล้ว อยากสั่งเลี้ยว/หยุดต่อทันที)
-// TrackSelectF(speed, 'คำสั่งทางแยก');    // เดินหน้า (ตัวที่ ff/ffc/ffl/ffr ฯลฯ เรียกใช้ภายใน)
-// TrackSelectB(speed, 'คำสั่งทางแยก');    // ถอยหลัง (ตัวที่ bb/bbc/bbl/bbr ฯลฯ เรียกใช้ภายใน)
-
-/* =====================================================
-   🔄 เลี้ยว / หมุน ด้วยเซนเซอร์เส้น
-   ===================================================== */
-
-// SpinL / SpinR = หมุนอยู่กับที่ 90°
-// spinl(speed);    spinr(speed);          // ไม่ใส่ speed = ใช้ค่าจาก SetTurnSpeed()
-// spinl2(speed);   spinr2(speed);         // เดินเลยเส้นก่อนแล้วค่อยหมุน แม่นกว่า
-
-// TurnL / TurnR = เลี้ยวโค้ง (ล้อเดียวหมุน) ใช้ TurnSpeedLeft()/TurnSpeedRight() ที่ตั้งไว้
-// TurnLeft();      TurnRight();
-
-// ชุดเดียวกันแต่ใช้เซนเซอร์ฝั่งหลัง (ตอนถอยหลัง) — TurnLeft_B/TurnRight_B กวาด B[] ตามค่า SetSensorTurnLeftRight (นับจากฝั่งตรงข้ามของ B[])
-// spinl_B(speed);  spinr_B(speed);
-// spinl2_B(speed); spinr2_B(speed);
-// TurnLeft_B();    TurnRight_B();
-
-// เลี้ยวล้อเดียวแบบ "ถอยหลัง" (ตั้งค่าแยกด้วย TurnSpeed*BackF / TurnSpeed*BackB ใน Setting.ino — ไม่ใช่ SetSensorTurnLeftRight)
-// TurnLeftBackF();   TurnRightBackF();    // เช็คเส้นด้วยเซนเซอร์หน้า F[] (เลือกเซนเซอร์ตามความเร็วล้อ) ตอนจบเบรก+lf() ปรับเข้าเส้น
-// TurnLeftBackB();   TurnRightBackB();    // เช็คเส้นด้วยเซนเซอร์หลัง B[] (เลือกเซนเซอร์ตามความเร็วล้อ)
-
-/* =====================================================
-   📡 IMU / GYROSCOPE COMMAND REFERENCE
-   ===================================================== */
-
-// 🔧 การตั้งค่าเริ่มต้น
-// resetAngles();        // รีเซ็ตมุมอ้างอิงของ IMU (ทำตอนหุ่นอยู่นิ่ง) — อ่านค่าเฉลี่ย 5 ครั้งมาตั้งเป็น current_degree กันค่าสะเปะสะปะตอนเพิ่งรีเซ็ต
-// SetRobotAngle();       // อ่านมุมปัจจุบันเก็บเป็นค่าอ้างอิง (current_degree)
-// gyroZ();                // คืนค่ามุมปัจจุบัน (องศา)
-
-// 🔒 ล็อกมุมอยู่กับที่ (กันหุ่นเบี้ยว)
-// SetHoldAngle();
-// SetFG(ms);   setfg(ms);      // โหมดหน้า
-// SetG(ms);    setg(ms);       // โหมดทั่วไป
-// SetGB(ms);   setgb(ms);      // โหมดถอยหลัง
-
-// ⚙️ ปรับความไวของ spindegree/turndegree/turndegreeb และ RunG/RunGB (Setting.ino) — ค่าเริ่มต้นตามวงเล็บ
-// SetGyroTurn(kp, kd, maxSpd, minSpd, smallAngle, stopThr);   // ค่าเริ่มต้น: 1.2, 0.6, 30, 10, 20.0, 1.0 — ใช้กับ turndegree()/turndegreeb() (เลี้ยวล้อเดียว)
-// SetGyroSpin(kp, kd, maxSpd, minSpd, smallAngle, stopThr);   // ค่าเริ่มต้น: 0.9, 0.6, 30, 10, 10.0, 1.0 — ใช้กับ spindegree() (หมุนอยู่กับที่)
-// SetGyroRun(kp, kd);    // ค่าเริ่มต้น 2.5, 1.5 — ตั้ง kpG/kdG ให้ RunG() (เดินหน้าตรงด้วยไจโร)
-// SetGyroRunB(kp, kd);   // ค่าเริ่มต้น 2.5, 1.5 — ตั้ง kpGB/kdGB ให้ RunGB() (ถอยหลังตรงด้วยไจโร)
-// ModeSpdGyro(mode, max, min);              // จำกัดกำลัง RunG/RunGB ทั้งคู่ (0=0..max ติดลบ→min | 1=min..max | 2=-Speed..Speed | 3=..max ติดลบ→-Speed | 4=0..Speed ไม่ถอยล้อ ค่าเริ่มต้น)
-// ModeSpdGyro(modeF, modeB, max, min);      // เหมือนกันแต่แยกโหมดเดินหน้า (RunG) / ถอยหลัง (RunGB) คนละค่า
-// ตัวอย่าง (ค่าเริ่มต้นจาก Setting.ino): ModeSpdGyro(4, 100, 0);
-
-// SetFG/SetG/SetGB ข้างบนคือ loop เรียก HoldAngleF()/HoldAngle()/HoldAngleB() ซ้ำจนครบเวลาที่กำหนด
-// เรียกฟังก์ชันเดี่ยว ๆ ด้านล่างเองได้ ถ้าต้องการควบคุม loop เอง (เช่นเรียกซ้ำใน loop() หลักของสเก็ตช์)
-// HoldAngle();     // ล็อกมุมไว้ที่ current_degree (ตั้งค่าไว้ล่าสุดจาก SetRobotAngle())
-// HoldAngleB();    // เหมือน HoldAngle() แต่กลับทิศมอเตอร์ (ใช้ตอนถอยหลัง)
-// HoldAngleF();    // ล็อกมุมไว้ที่ holdAngle (ตั้งค่าไว้ล่าสุดจาก SetHoldAngle())
-// ปรับความไวได้ด้วยตัวแปร kpHold/kdHold, kpBHold/kdBHold, kpFHold/kdFHold
-
-// 🔄 หมุน / เลี้ยว ตามองศาที่กำหนด (ความเร็วอัตโนมัติ)
-// spindegree(Angle);          turndegree(Angle);          turndegreeb(Angle);
-// ตัวอย่าง: spindegree(-90);   // หมุนซ้าย 90°   (ลบ = ซ้าย, บวก = ขวา)
-
-// ⚙️ แบบกำหนดความเร็วเอง
-// spindegree(speed, Angle);   turndegree(speed, Angle);   turndegreeb(speed, Angle);
-// ตัวอย่าง: turndegree(50, 90);   // เลี้ยวขวา ความเร็ว 50
-
-// 🧭 หมุน/เลี้ยวไปยัง "ทิศสัมบูรณ์" (อ้างอิงมุม 0° ตอน resetAngles()/เปิดเครื่อง เช่น 0, 90, 180, 270, 360) ไปทางที่สั้นที่สุด
-// spindirection(direction);        spindirection(speed, direction);
-// turndirection(direction);        turndirection(speed, direction);      // เลี้ยวล้อเดียว (เดินหน้า)
-// turndirectionb(direction);       turndirectionb(speed, direction);     // เลี้ยวล้อเดียว (ถอยหลัง)
-// ตัวอย่าง: spindirection(90);   // หันไปทิศ 90° ไม่ว่าตอนนี้หันอยู่ทิศไหน (default speed = 30)
-// relativeToDirection(direction);  // คืนมุมสัมพัทธ์ที่ต้องหมุน (-180..180) ไปยังทิศนั้น
-// SetDirectionG(direction);        // ตั้งทิศเป้าหมายให้ RunG/RunGB วิ่งตรง (แทน current_degree) — ปกติเรียกผ่านรุ่นที่มี direction ด้านล่าง
-
-// ชื่อย่อ (ใช้แข่ง เขียนเร็ว) — ความหมายเหมือนกันทุกตัว มี/ไม่มี speed ได้ทั้งคู่
-// spinlg / spinrg      = spindegree ซ้าย/ขวา
-// turnlg / turnrg      = turndegree ซ้าย/ขวา
-// turnlbg / turnrbg    = turndegreeb ซ้าย/ขวา
-// slg/srg/tlg/trg/tlbg/trbg   = ชื่อสั้นอีกชุดของ 6 ตัวข้างบน ความหมายเดียวกัน
-
-// 🔁 หมุน "ไม่เบรก" (สำหรับต่อท่าซ้อนกัน เช่น หมุนซ้ายแล้วหมุนขวาทันที)
-// turndegree_none(Angle);            turndegree_none(speed, Angle);       // ค่า default speed = 50 ถ้าไม่ระบุ
-// turndegreeb_none(Angle);           turndegreeb_none(speed, Angle);      // เหมือนกันแต่ตอนถอยหลัง
-// ต่างจาก turndegree/turndegreeb ตรงที่ไม่ MotorStop() ตอนจบ (ไหลต่อท่าถัดไปได้ลื่นกว่า)
-// turndirection_none(direction);     turndirection_none(speed, direction);    // เหมือน turndegree_none แต่ไปทิศสัมบูรณ์ (default speed = 30)
-// turndirectionb_none(direction);    turndirectionb_none(speed, direction);  // เหมือนกันแต่ตอนถอยหลัง
-
-// 🔀 หมุนสองจังหวะต่อเนื่อง (ซ้ายแล้วขวา หรือขวาแล้วซ้าย) ไม่เบรกกลาง — ใช้ turndegree_none/turndegreeb_none ข้างในแล้วปิดท้ายด้วย SetG
-// tlrg(Angle);              trlg(Angle);              // เดินหน้า: ซ้ายแล้วขวา (tlrg) / ขวาแล้วซ้าย (trlg) มุมเท่ากันทั้งสองจังหวะ
-// tlrg(speed, Angle);       trlg(speed, Angle);        // กำหนดความเร็วเอง มุมเท่ากันทั้งสองจังหวะ
-// tlrg(speed, Angle, Angle2);  trlg(speed, Angle, Angle2);  // กำหนดมุมจังหวะแรก/สองแยกกัน (ไม่มี SetG ปิดท้าย)
-// tlrbg(Angle);             trlbg(Angle);              // เหมือนชุด tlrg/trlg แต่เป็นเวอร์ชันถอยหลัง (ใช้ turndegreeb_none)
-// tlrbg(speed, Angle);      trlbg(speed, Angle);
-// tlrbg(speed, Angle, Angle2); trlbg(speed, Angle, Angle2);
-
-// 🌙 หมุนโค้งแบบวงกว้าง (arc: ล้อสองข้างวิ่งพร้อมกันคนละความเร็ว ไม่ใช่หมุนอยู่กับที่)
-// rotatedegree(SpeedL, SpeedR, relative_degree);              // ใช้ kp/kd default (0.9, 0.6)
-// rotatedegree(SpeedL, SpeedR, relative_degree, kp, kd);       // กำหนด kp/kd เอง
-// ตัวอย่าง: rotatedegree(60, 20, 90);   // โค้งขวา 90° ล้อซ้ายเร็วกว่าล้อขวา
-
-/* =====================================================
-   🚀 การวิ่งตรง / ตามระยะ ด้วย Gyro (RunG แทน PIDF)
-   ===================================================== */
-
-// ▶ วิ่งตามเวลา
-// fftimerg(speed, time);                    bbtimerg(speed, time);
-// fftimerg(speed, time, 'คำสั่งทางแยก');      bbtimerg(speed, time, 'คำสั่งทางแยก');
-// fftg(speed, time, 'คำสั่งทางแยก');          bbtg(speed, time, 'คำสั่งทางแยก');
-
-// ▶ วิ่งตามระยะ (ซม.) — มีเร่ง/ผ่อนความเร็วอัตโนมัติช่วงต้น-ท้าย
-// ffcmg(speed, cm , 'คำสั่งทางแยก');        bbcmg(speed, cm , 'คำสั่งทางแยก');
-
-// ▶ วิ่งตามระยะ ความเร็วคงที่ตลอด (ไม่เร่ง/ผ่อน)
-// ffcmgs(speed, cm [, 'คำสั่งทางแยก']);       bbcmgs(speed, cm , 'คำสั่งทางแยก');
-
-// ▶ วิ่งจนเจอเส้นดำตรงกลาง (คุมทิศด้วย gyro)
-// ffbg(speed, 'คำสั่งทางแยก');                bbbg(speed, 'คำสั่งทางแยก');
-
-// ▶ วิ่งจนถึงระยะจากเซนเซอร์วัดระยะ
-// ffdg(speed, 'คำสั่งทางแยก', dist);          bbdg(speed, 'คำสั่งทางแยก', dist);
-// ffdgs(speed, 'คำสั่งทางแยก', dist);         bbdgs(speed, 'คำสั่งทางแยก', dist);
-
-// ▶ ล็อกทิศสัมบูรณ์ระหว่างวิ่ง: เติมพารามิเตอร์ direction (0, 90, 180, 270, 360) ต่อท้ายสุดของฟังก์ชัน *g ได้ทุกตัว
-// fftimerg(speed, time, direction);            bbtimerg(speed, time, direction);
-// fftimerg(speed, time, 'select', direction);  bbtimerg(speed, time, 'select', direction);   // fftg/bbtg ก็มีรุ่นนี้
-// ffcmg(speed, cm, direction);                 bbcmg(speed, cm, direction);
-// ffcmg(speed, cm, 'select', direction);       bbcmg(speed, cm, 'select', direction);
-// ffcmgs(speed, cm, direction);                bbcmgs(speed, cm, direction);
-// ffcmgs(speed, cm, 'select', direction);      bbcmgs(speed, cm, 'select', direction);
-// ffbg(speed, 'select', direction);            bbbg(speed, 'select', direction);
-// ตัวอย่าง: ffcmg(60, 50, 'p', 90);   // วิ่ง 50 ซม. โดยล็อกหน้าหุ่นไว้ทิศ 90°
-
-// ▶ วิ่งตรงด้วย gyro จนเจอเส้นตัดหน้า/หลัง (ใช้ภายใน 'S'/'G' ของ TrackSelectG/GB)
-// ToFrontG();   ToBackG();
-
-// ▶ เข้ากึ่งกลางทางแยกด้วย gyro
-// ToCenterLG();   ToCenterRG();   ToCenterLRG();   BackCenterG();
-
-// ▶ เรียกจัดการ "คำสั่งทางแยก" ตรง ๆ ด้วย gyro (ปกติ ffbg/bbbg เรียกให้อัตโนมัติเมื่อเจอเส้นอยู่แล้ว
-//    ใช้ 2 ตัวนี้เองเฉพาะกรณีเช็คเงื่อนไขเจอทางแยกเองแล้ว อยากสั่งเลี้ยว/หยุดต่อทันที)
-// TrackSelectG(speed, 'คำสั่งทางแยก');    // เดินหน้า
-// TrackSelectGB(speed, 'คำสั่งทางแยก');   // ถอยหลัง
-
-/* =====================================================
-   🌀 Circle Motion Functions (วิ่งเบี่ยงซ้าย/ขวา)
-   เปลี่ยนค่า set_position ชั่วคราวเป็น set_positionL/R เพื่อวิ่งโค้ง
-   =====================================================
-   ┌────────────────────────────────────────────────────────────────┐
-   │ Function                          Example                      │
-   ├────────────────────────────────────────────────────────────────┤
-   │ ffcl(Speed, select)               ffcl(60, 'p');                │
-   │ ffcr(Speed, select)               ffcr(60, 'p');                │
-   │--------------------------------------------------------------- │
-   │ fftimercl(Speed, time)            fftimercl(60, 500);           │
-   │ fftimercr(Speed, time)            fftimercr(60, 500);           │
-   │--------------------------------------------------------------- │
-   │ ffcmcl(Speed, distance)           ffcmcl(60, 20);                │
-   │ ffcmcr(Speed, distance)           ffcmcr(60, 20);                │
-   │--------------------------------------------------------------- │
-   │ fftimercl(Speed, time, select)    fftimercl(60, 500, 'p');       │
-   │ fftimercr(Speed, time, select)    fftimercr(60, 500, 'p');       │
-   │--------------------------------------------------------------- │
-   │ ffcmcl(Speed, distance, select)   ffcmcl(60, 20, 'p');           │
-   │ ffcmcr(Speed, distance, select)   ffcmcr(60, 20, 'p');           │
-   ├────────────────────────────────────────────────────────────────┤
-   │ bbcl(Speed, select)               bbcl(60, 'p');                │
-   │ bbcr(Speed, select)               bbcr(60, 'p');                │
-   │--------------------------------------------------------------- │
-   │ bbtimercl(Speed, time)            bbtimercl(60, 500);           │
-   │ bbtimercr(Speed, time)            bbtimercr(60, 500);           │
-   │--------------------------------------------------------------- │
-   │ bbcmcl(Speed, distance)           bbcmcl(60, 20);                │
-   │ bbcmcr(Speed, distance)           bbcmcr(60, 20);                │
-   │--------------------------------------------------------------- │
-   │ bbtimercl(Speed, time, select)    bbtimercl(60, 500, 'p');       │
-   │ bbtimercr(Speed, time, select)    bbtimercr(60, 500, 'p');       │
-   │--------------------------------------------------------------- │
-   │ bbcmcl(Speed, distance, select)   bbcmcl(60, 20, 'p');           │
-   │ bbcmcr(Speed, distance, select)   bbcmcr(60, 20, 'p');           │
-   └────────────────────────────────────────────────────────────────┘
-
-   Parameters
-     Speed    : ความเร็วมอเตอร์
-     time     : เวลา (ms)
-     distance : ระยะทาง (ซม. โดยประมาณ)
-     select   : คำสั่งทางแยก (ดูตารางหมวด 7️⃣)
-
-   Notes
-     - CL = Circle Left, CR = Circle Right
-     - ต้องตั้ง set_position_line_l()/set_position_line_r() ไว้ก่อน (ใน Setting.ino)
-   ===================================================== */
-
-/* =====================================================
-   🖐️ ARM & SERVO COMMANDS
-   ===================================================== */
-
-// ระดับไลบรารี (Servo.h)
-// armupdown(องศา);                    armupdown(องศา, ความเร็ว);
-// arm_left_right(องศาซ้าย, องศาขวา);   arm_left_right(องศาซ้าย, องศาขวา, ความเร็ว);
-// Servo(ขา, องศา);                     // ขา: 0, 1, 10, 28
-// Servo(x, y, z);                      Servo(t1, t2, t3, speed);
-// S0_trim(x); S1_trim(x); S10_trim(x); S28_trim(x);   // ปรับ trim แต่ละขา
-// SerialServoControl();                // ตั้งค่าเซอร์โวผ่าน Serial (พิมพ์ "ขา องศา" เช่น "10 90")
-
-// ระดับสเก็ตช์ (Servo.ino — แขนกล/มือจับ)
-// arm_ready()        arm_open_down()     arm_down_open()
-// arm_open_up()       arm_up_open()       arm_down_close()
-// arm_close_down()    arm_up_close()      arm_close_up()
-// arm_big_box()        arm_big_box_up()    arm_behihd()
-// arm_up()             arm_up45()          arm_down()          arm_open()
-// arm_close()          arm_big()           arm_open_l()      arm_open_r()
-// (ทุกฟังก์ชันข้างบนมีรุ่น (spd) ต่อท้ายได้ เช่น arm_close(2); = หุบมือแบบไล่มุมนุ่มนวล)
-// ค่าองศาที่ตั้งไว้: servo_down, servoL_open, servoR_open, readyL/readyR,
-//                    behindL/behindR, up, up45, closeL/closeR, closeBigL/closeBigR
-
-/* =====================================================
-   👂 เซนเซอร์เส้น & คาลิเบรต
-   ===================================================== */
-
-// อ่านค่า
-// ReadSensor();   ReadSensorRaw();
-// ReadCalibrateF();   ReadCalibrateB();   ReadCalibrateC();
-
-// คาลิเบรต
-// calibrateA();   calibrateB();   calibrateC();                    // -> EEPROM ภายนอก
-// saveCalibA_LOCAL();  saveCalibB_LOCAL();  saveCalibC_LOCAL();     // -> flash ในบอร์ด (ใช้จริง)
-// loadCalibration();   loadCalibration_LOCAL();
-
-// ตั้งค่าพฤติกรรม
-// TrackLineColor(0/1);           // 0=พื้นขาวเส้นดำ, 1=พื้นดำเส้นขาว
-// Dottedline(0/1);                // 1=สนามมีเส้นประ
-// clampSensorValueF(min,max);   clampSensorValueB(min,max);   clampSensorValueC(min,max);
-// RefLineValue(x);   RefCenterLineValue(x);   SetAnalogDistance(pin);
-
-/* =====================================================
-   ⚙️ มอเตอร์พื้นฐาน & การตั้งค่า PID
-   ===================================================== */
-
-// Motor(L, R);              Move(L, R, time_ms);
-// MotorStop();               MotorStop(t);          // มี t = บี๊บด้วย
-// MotorShot(t, power);       // เบรกกะทันหันแบบ active short-brake (ลัดวงจรผ่าน back-EMF); t=เวลาคงเบรก(ms, ค่าเริ่มต้น 3), power=แรงเบรก 0-100 (ค่าเริ่มต้น 90) แล้วปล่อยกลับ MotorStop() อัตโนมัติ
-
-// เดินหน้า / ถอย / หมุน / เลี้ยวล้อเดียว ตามเวลา
-// fd(speed, time_ms);   bk(speed, time_ms);
-// sl(speed, time_ms);    sr(speed, time_ms);
-// tl(speed, time_ms);    tr(speed, time_ms);
-
-// ตารางชดเชย/PID ต่อช่วงความเร็ว (Setting.ino, ch = SPD_10 ... SPD_100)
-// setBalanceSpeed(ch, l, r);        setBalanceBackSpeed(ch, l, r);
-// Set_KP_KD(ch, kp, kd);            Set_KP_KD_Back(ch, kp, kd);
-
-// ตั้งค่า PID/ทางแยกอื่น ๆ (Setting.ino)
-// set_position_line(pos);   set_position_line_l(pos);   set_position_line_r(pos);
-// set_line_center(0/1);      SetToCenterSpeed(speed);
-// set_slow_kp_kd(kpf, kdf, kpb, kdb);
-// SetTurnSpeed(spd);          TurnSpeedLeft(l, r, delay);   TurnSpeedRight(l, r, delay);
-// ModeSpdPID(mode, max, min);
-// SetPIDDeadBand(db);         // ค่า error ต่ำกว่านี้มองเป็น 0 กันสั่น (ค่าเริ่มต้น 20)
-
-/* =====================================================
-   🔔 เสียง
-   ===================================================== */
-
-// Beep(ms);   Beep2(freq, ms);   BZon();   BZoff();
-// beep(freq, dur);   blink(times);
-// BeepScanner();   // ปี๊บสั้นแหลมครั้งเดียว คล้ายเครื่องยิงบาร์โค้ด (= beep(3000, 80))
-
-/* =====================================================
-   ⚠️ ข้อควรระวัง
-   =====================================================
- *  1) select ต้องใส่ในเครื่องหมายคำพูดเดี่ยวเสมอ เช่น ff(100, 'p'); ไม่ใช่ ff(100, p);
- *  2) ฟังก์ชัน ff, bb, ToCenter (ทุกตัวที่ขึ้นต้นด้วยชื่อเหล่านี้) ที่รอเงื่อนไขเส้นเป็น while(1) ไม่มี timeout
- *     ถ้าชนสิ่งกีดขวางจนเซนเซอร์ไม่เจอเงื่อนไข จะค้างสั่งมอเตอร์เต็มกำลังไม่มีที่สิ้นสุด
- *  3) ต้องคาลิเบรตเซนเซอร์ผ่าน sw() อย่างน้อย 1 ครั้งบนสนามจริงก่อนแข่งเสมอ
- *  4) ฟังก์ชัน Serial_, SerialCalibrate_, SerialPosition (ตระกูล debug) เป็น while(1) ห้ามเรียกใน Mission()
-   ===================================================== */
+// setup() {  RobotSetup();  Setting();  sw();  SetRobotAngle();  Mission();  }
+//
+//   speed   ความเร็ว 0-100
+//   L, R    ความเร็วล้อซ้าย / ขวา  (-100 ถึง 100, ติดลบ = ถอย)
+//   ms      เวลา (มิลลิวินาที)
+//   cm      ระยะทาง (เซนติเมตร, ประมาณจากเวลา x ความเร็ว)
+//   dist    ค่าเซนเซอร์วัดระยะ analogRead (ยิ่งใกล้ ค่ายิ่งมาก)
+//   'p'     ตัวอักษรคำสั่งทางแยก ดูตาราง [3]
+//   dir     ทิศสัมบูรณ์ 0 / 90 / 180 / 270 (อ้างอิงตอน resetAngles)
+//   มุม     ลบ = ซ้าย, บวก = ขวา
+
+/* ==========================================================================
+   [2] ตั้งค่า (Setting.ino)
+   ========================================================================== */
+// --- มอเตอร์ ---
+// set_Freq("Coreless_Motors");             // 20 kHz  (หรือ "coreless")
+// set_Freq("DC_Motors");                   // 1 kHz
+//
+// --- กรองค่า calibrate ---
+// clampSensorValueF(min, max);   clampSensorValueB(min, max);   clampSensorValueC(min, max);
+//
+// --- เซนเซอร์เส้น ---
+// RefLineValue(500);                       // threshold เซนเซอร์หน้า-หลัง (0-1000)
+// RefCenterLineValue(500);                 // threshold เซนเซอร์คู่กลาง (0-1000)
+// TrackLineColor(0);                       // 0 = พื้นขาวเส้นดำ | 1 = พื้นดำเส้นขาว
+// Dottedline(0);                           // 0 = ไม่มีเส้นประ | 1 = มีเส้นประ
+//
+// --- เข้ากึ่งกลาง ---
+// set_line_center(1);                      // 0 = วิ่งตรงเข้ากลาง | 1 = เดินตามเส้นเข้ากลาง
+// SetToCenterSpeed(20);                    // ความเร็วตอนเข้ากลาง
+// set_brake_fc(ff, fc);                    // เวลาเบรก (ms) ตอนเดินหน้า
+// set_brake_bc(bf, bc);                    // เวลาเบรก (ms) ตอนถอยหลัง
+// set_pid_lf(kp, kd);  set_pid_lb(kp, kd); // PID ของ lf / lb (ค่าเริ่มต้น 0.015, 0.10)
+//
+// --- ความเร็วเลี้ยว (ใช้กับ select l r q e) ---
+// SetTurnSpeed(50);                        // ความเร็วหมุน 'l' 'r'
+// TurnSpeedLeft(L, R, ms);                 TurnSpeedRight(L, R, ms);         // 'q' 'e'  TurnLeft / TurnRight
+// SetSensorTurnLeftRight(l, r);            // เซนเซอร์หน้าที่ใช้หยุด TurnLeft (F[0..l]) / TurnRight (F[7..r])
+// SetSensorTurnLeftRightB(l, r);           // เซนเซอร์หลังที่ใช้หยุด TurnLeftB (B[7..l]) / TurnRightB (B[0..r])
+// TurnBackSpeedLeft(L, R, ms);             TurnBackSpeedRight(L, R, ms);     // TurnLeftB / TurnRightB
+// TurnSpeedLeftBackF(L, R, ms);            TurnSpeedRightBackF(L, R, ms);    // TurnLeftBackF / TurnRightBackF
+// TurnSpeedLeftBackB(L, R, ms);            TurnSpeedRightBackB(L, R, ms);    // TurnLeftBackB / TurnRightBackB
+//
+// --- โหมดจำกัดความเร็วล้อ ---
+// ModeSpdPID(mode, max, min);                                                // PID เส้น
+// set_pid_mode2_limit(up, down);           // PID เส้น โหมด 2: -(Speed+down)..(Speed+up) (ค่าเริ่มต้น 20, 20)
+// ModeSpdGyro(mode, max, min);             ModeSpdGyro(modeF, modeB, max, min);  // Gyro (แยกหน้า/หลังได้)
+//     mode 0 = 0..max   1 = min..max   2 = -Speed..Speed   3 = ..max   4 = 0..Speed (ไม่ถอยล้อ)
+// set_gyro_mode2_limit(up, down);          // Gyro โหมด 2: -(Speed+down)..(Speed+up) (ค่าเริ่มต้น 20, 20)
+// set_gyro_mode4_limit(up);                // Gyro โหมด 4: 0..(Speed+up) (ค่าเริ่มต้น 20)
+//
+// --- PID ไจโร ---
+// SetGyroTurn(kp, kd, maxSpd, minSpd, smallAngle, stopThr);   // เลี้ยวล้อเดียวเดินหน้า (turndegree)
+// SetGyroTurnB(kp, kd, maxSpd, minSpd, smallAngle, stopThr);  // เลี้ยวล้อเดียวถอยหลัง (turndegreeb / turndirectionb)
+// SetGyroSpin(kp, kd, maxSpd, minSpd, smallAngle, stopThr);   // หมุนอยู่กับที่ (spindegree)
+// SetGyroRun(kp, kd);                      SetGyroRunB(kp, kd);              // วิ่งตรง RunG / RunGB
+//
+// --- ตำแหน่งเส้น (0-5000, กลาง = 2500) ---
+// set_position_line(2500);                 // ตำแหน่งปกติ
+// set_position_line_l(500);                set_position_line_r(4500);        // วิ่งโค้ง cl / cr
+//
+// --- เซนเซอร์วัดระยะ ---
+// SetAnalogDistance(28);                   // ขาอนาล็อก A0-A3 (26-29)
+//
+// --- ตารางตามความเร็ว (ch = SPD_10, SPD_20 ... SPD_100) ---
+// setBalanceSpeed(ch, L, R);               // balance เดินหน้า (ล้อไหนแรงกว่า เพิ่มค่าข้างนั้น)
+// setBalanceBackSpeed(ch, L, R);           // balance ถอยหลัง
+// Set_KP_KD(ch, kp, kd);                   // PID เดินหน้า
+// Set_KP_KD_Back(ch, kp, kd);              // PID ถอยหลัง
+// SetDelayBreak(ch, f, b);                 // เวลาเบรก (ms) ตอนหยุดที่เส้น (ไถลเลย = เพิ่ม, ถอยเลย = ลด)
+
+/* ==========================================================================
+   [3] ตารางคำสั่งทางแยก 'select'  (ตัวสุดท้ายของ ff / bb / *g)
+   --------------------------------------------------------------------------
+     ตัวอักษร  | ff / bb (เดินตามเส้น)               | *g / *gb (Gyro)
+     ---------+-------------------------------------+----------------------------
+     's'      | หยุด                                 | หยุด
+     'S'      | วิ่งถึงขอบเส้นแล้วหยุด                 | หยุด
+     'p' 'P'  | วิ่งผ่าน                               | วิ่งผ่าน
+     'c' 'C'  | เข้ากลางแล้วหยุด                       | เข้ากลางแล้วหยุด
+     'l' 'L'  | เข้ากลาง + หมุนซ้าย                    | 'l' เข้ากลาง+หมุนซ้าย  'L' หมุนซ้ายทันที
+     'r' 'R'  | เข้ากลาง + หมุนขวา                    | 'r' เข้ากลาง+หมุนขวา  'R' หมุนขวาทันที
+     'q' 'Q'  | เลี้ยวโค้งซ้าย  (bb = ขวา)             | เลี้ยวโค้งซ้าย  (gb = ขวา)
+     'e' 'E'  | เลี้ยวโค้งขวา  (bb = ซ้าย)             | เลี้ยวโค้งขวา  (gb = ซ้าย)
+     'a' 'A'  | หมุนซ้ายด้วยเซนเซอร์หลัง               | -
+     'd' 'D'  | หมุนขวาด้วยเซนเซอร์หลัง               | -
+     'b' 'B'  | เข้ากลางแล้ววิ่งต่อถึงเส้นอีกฝั่ง          | เหมือนกัน
+     'g' 'G'  | ปรับตรงด้วย gyro                      | ตัวอื่น ๆ = SetG(100)
+   --------------------------------------------------------------------------
+     ตัวพิมพ์ใหญ่ (P C Q E G) = เรียก ToFront() / ToBack() จัดตรงเส้นก่อน
+   ========================================================================== */
+
+/* ==========================================================================
+   [4] เดินตามเส้น เดินหน้า  ff...
+   ========================================================================== */
+// ff(speed, 'p');                          // วิ่งจนเจอแยกใดก็ได้ (F0 หรือ F7)
+// ffc(speed, 'p');      ffc2(speed, 'p');  // เจอแยกตัด (F0 + F7) | ffc2 ยอมรับแยกกว้าง/แคบ
+// ffl(speed, 'p');                         // เจอแยกซ้าย (F0)
+// ffl2(speed, 'p');                        // เจอแยกซ้ายเต็ม (F0-F4)
+// ffr(speed, 'p');                         // เจอแยกขวา (F7)
+// ffr2(speed, 'p');                        // เจอแยกขวาเต็ม (F3-F7)
+// ffnum(speed, 'p', n); ffn(speed, 'p', n);    // เจอเส้นที่เซนเซอร์ F[n] (0-7)
+// ffsum(speed, 'p', sum);                      // ผลรวม F[0]..F[7] >= sum (0-8000)
+// ffwhite(speed, 'p');  ffw(speed, 'p');       // วิ่งจนไม่เจอเส้นเลย
+// ffblack(speed, 'p');  ffb(speed, 'p');       // วิ่งตรง (ไม่ PID) จนเจอเส้น
+// ffblack(L, R, 'p');   ffb(L, R, 'p');
+// ff_distance(speed, 'p', dist);   ffd(speed, 'p', dist);     // จนเซนเซอร์วัดระยะถึง dist
+// ff_distances(speed, 'p', dist);  ffds(speed, 'p', dist);    // แบบค่อย ๆ ชะลอ
+// fftimer(speed, ms);   fftimer(speed, ms, 'p');              // วิ่งตามเวลา
+// fft(speed, ms);       fft(speed, ms, 'p');                  // ชื่อย่อของ fftimer
+// ffcm(speed, cm);      ffcm(speed, cm, 'p');                 // วิ่งตามระยะทาง
+// lf(ms);                                  // PID อยู่กับที่ จัดตัวตรงเส้น
+//
+// --- กำหนด Kp / Kd เอง (ใส่ต่อจาก speed) ---
+// ใช้ได้กับ ff ffc ffc2 ffl ffl2 ffr ffr2 ffnum/ffn ffsum ffwhite/ffw ff_distance/ffd
+// และฝั่ง bb... ทุกตัวที่คู่กัน  (ffblack/ffb ไม่ใช้ PID จึงไม่มี)
+// ff(speed, kp, 'p');                      // กำหนด Kp อย่างเดียว (Kd ใช้ค่าจากตารางความเร็ว)
+// ff(speed, kp, kd, 'p');                  // กำหนดทั้ง Kp และ Kd
+// ffn(speed, kp, kd, 'p', n);              // ตัวที่มีพารามิเตอร์ต่อท้าย ใส่ Kp/Kd หลัง speed เหมือนกัน
+// ffd(speed, kp, 'p', dist);
+// fftimer(speed, kp, ms);       fftimer(speed, kp, kd, ms);       // ตามเวลา (ใส่ 'p' ท้ายสุดได้)
+// fftimer(speed, kp, ms, 'p');  fftimer(speed, kp, kd, ms, 'p');
+// ffcm(speed, kp, cm);          ffcm(speed, kp, kd, cm);          // ตามระยะทาง (cm เป็นจำนวนเต็ม)
+// ffcm(speed, kp, cm, 'p');     ffcm(speed, kp, kd, cm, 'p');
+// fft(speed, kp, [kd,] ms [, 'p']);                               // ชื่อย่อ ใช้แบบเดียวกับ fftimer
+// * ใส่ Kp เป็นทศนิยม เช่น 0.02  (ใส่ค่าติดลบ = ใช้ค่าจากตาราง)
+
+/* ==========================================================================
+   [5] เดินตามเส้น ถอยหลัง  bb...   (ใช้เซนเซอร์หลัง เหมือน ff ทุกอย่าง)
+   ========================================================================== */
+// bb(speed, 'p');
+// bbc(speed, 'p');      bbc2(speed, 'p');
+// bbl(speed, 'p');      bbl2(speed, 'p');
+// bbr(speed, 'p');      bbr2(speed, 'p');
+// bbnum(speed, 'p', n); bbn(speed, 'p', n);
+// bbsum(speed, 'p', sum);                      // ผลรวม B[0]..B[7] >= sum (0-8000)
+// bbwhite(speed, 'p');  bbw(speed, 'p');
+// bbblack(speed, 'p');  bbb(speed, 'p');
+// bbblack(L, R, 'p');   bbb(L, R, 'p');
+// bb_distance(speed, 'p', dist);   bbd(speed, 'p', dist);
+// bbtimer(speed, ms);   bbtimer(speed, ms, 'p');
+// bbt(speed, ms);       bbt(speed, ms, 'p');
+// bbcm(speed, cm);      bbcm(speed, cm, 'p');
+// lb(ms);
+// bb(speed, kp, 'p');   bb(speed, kp, kd, 'p');   bbn(speed, kp, kd, 'p', n);   // กำหนด Kp / Kd เอง
+// bbtimer(speed, kp, [kd,] ms [, 'p']);    bbcm(speed, kp, [kd,] cm [, 'p']);
+// bbt(speed, kp, [kd,] ms [, 'p']);
+
+/* ==========================================================================
+   [6] วิ่งโค้ง  cl = เบี่ยงซ้าย, cr = เบี่ยงขวา
+       (ตั้ง set_position_line_l / _r ใน Setting ก่อน)
+   ========================================================================== */
+//   เดินหน้า                         ถอยหลัง
+// ffcl(speed, 'p');                 bbcl(speed, 'p');
+// ffcr(speed, 'p');                 bbcr(speed, 'p');
+// fftimercl(speed, ms [, 'p']);     bbtimercl(speed, ms [, 'p']);
+// fftimercr(speed, ms [, 'p']);     bbtimercr(speed, ms [, 'p']);
+// ffcmcl(speed, cm [, 'p']);        bbcmcl(speed, cm [, 'p']);
+// ffcmcr(speed, cm [, 'p']);        bbcmcr(speed, cm [, 'p']);
+// ffdircl(speed, dir [, 'p']);      bbdircl(speed, dir [, 'p']);     // จนหันถึงทิศ dir (0/90/180/270)
+// ffdircr(speed, dir [, 'p']);      bbdircr(speed, dir [, 'p']);
+//                                   ( [ ] = ใส่หรือไม่ใส่ก็ได้ )
+//
+// --- กำหนด Kp / Kd เอง (ใส่ต่อจาก speed) ---
+// ffcl(speed, kp, [kd,] 'p');                  bbcl / ffcr / bbcr ใช้แบบเดียวกัน
+// fftimercl(speed, kp, [kd,] ms [, 'p']);      ...timercr / bbtimercl / bbtimercr แบบเดียวกัน
+// ffcmcl(speed, kp, [kd,] cm [, 'p']);         ...cmcr / bbcmcl / bbcmcr แบบเดียวกัน (cm เป็นจำนวนเต็ม)
+// ffdircl(speed, kp, [kd,] dir [, 'p']);       ...dircr / bbdircl / bbdircr แบบเดียวกัน (kp ต้องมีจุดทศนิยม เช่น 0.02)
+
+/* ==========================================================================
+   [7] เข้ากึ่งกลาง / ออกตัว / เข้าเส้นชัย
+   ========================================================================== */
+// ToCenter();                                  // เดินหน้าเข้ากลาง (เซนเซอร์คู่กลาง)
+// BackCenter();                                  // ถอยหลังเข้ากลาง
+// ToFront();    ToBack();                        // จัดตัวตรงเส้น หน้า / หลัง
+// gostart(speed);   gostart(L, R);               // ออกจากกล่องเริ่ม
+// goend(speed);     goend(L, R);                 // วิ่งเข้าเส้นชัย
+// setf(n);   setb(n);   setfc(n);   setbc(n);    // จัดตรงเส้น n รอบ (= balancef / b / fc / bc)
+// set_f(n);  set_b(n);  set_fc(n);  set_bc(n);
+// TrackSelectF(speed, 'p');   TrackSelectB(speed, 'p');   // สั่ง select ตรง ๆ
+
+/* ==========================================================================
+   [8] หมุน / เลี้ยว ด้วยเซนเซอร์เส้น  ([speed] ใส่หรือไม่ใส่ก็ได้)
+   ========================================================================== */
+// spinl([speed]);      spinr([speed]);       // หมุนอยู่กับที่ไปเส้นถัดไป (เซนเซอร์หน้า)
+// spinl2([speed]);     spinr2([speed]);
+// spinlb([speed]);     spinrb([speed]);      // ใช้เซนเซอร์หลัง
+// spinl2b([speed]);    spinr2b([speed]);
+// TurnLeft();          TurnRight();          // เลี้ยวโค้ง เซนเซอร์หน้า
+// TurnLeftB();        TurnRightB();        // เลี้ยวโค้ง เซนเซอร์หลัง
+// TurnLeftBackF();     TurnRightBackF();     // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หน้า
+// TurnLeftBackB();     TurnRightBackB();     // เลี้ยวล้อเดียวถอยหลัง เช็คเซนเซอร์หลัง
+
+/* ==========================================================================
+   [9] Gyro พื้นฐาน / ล็อกมุม
+   ========================================================================== */
+// resetAngles();       // ตั้งมุมปัจจุบัน = 0 (เรียกตอนหุ่นหยุดนิ่ง)
+// SetRobotAngle();     // จำมุมปัจจุบันเป็นมุมเป้าหมายวิ่งตรง
+// gyroZ();             // อ่านมุม -180..180 (ซ้าย = ลบ, ขวา = บวก)
+// SetDirectionG(dir);  relativeToDirection(dir);    // ตั้งทิศเป้าหมายแบบสัมบูรณ์
+//
+// SetG(ms);    setg(ms);       // ล็อกมุม (หมุนอยู่กับที่) ตามเวลา
+// SetGB(ms);   setgb(ms);      // ล็อกมุม แบบถอยหลัง
+// SetFG(ms);   setfg(ms);      // ล็อกมุม แบบเดินหน้า
+// SetBG(ms);   setbg(ms);      // ล็อกมุม แบบถอยหลัง (จำมุม ณ ตอนเรียก เหมือน SetFG)
+// SetHoldAngle();              // จำมุมปัจจุบันให้ HoldAngle...
+// HoldAngle();   HoldAngleB();   HoldAngleF();   HoldAngleBF();    // ใช้ใน loop เพื่อค้างมุม
+
+/* ==========================================================================
+   [10] Gyro หมุน / เลี้ยว  (มุม: ลบ = ซ้าย, บวก = ขวา | [speed] ใส่หรือไม่ใส่ก็ได้)
+   ========================================================================== */
+// --- หมุน/เลี้ยวตามมุม ---
+// spindegree([speed,] -90);          // หมุนอยู่กับที่
+// turndegree([speed,] 90);           // เลี้ยวล้อเดียว เดินหน้า
+// turndegreeb([speed,] 90);          // เลี้ยวล้อเดียว ถอยหลัง
+// turndegree_none([speed,] 90);      // เหมือน turndegree แต่ไม่เบรก (ต่อคำสั่งถัดไปลื่น)
+// turndegreeb_none([speed,] 90);
+// rotatedegree(L, R, 90);            rotatedegree(L, R, 90, kp, kd);   // โค้งกว้าง กำหนดล้อเอง
+//
+// --- หันไปทิศสัมบูรณ์ (0 / 90 / 180 / 270) ---
+// spindirection([speed,] dir);
+// turndirection([speed,] dir);
+// turndirectionb([speed,] dir);
+// turndirection_none([speed,] dir);
+// turndirectionb_none([speed,] dir);
+//
+// --- วิ่งตามเส้นจนหันถึงทิศ (ใช้กับเส้นโค้ง) ---
+// ffdir(speed, dir [, 'p']);             bbdir(speed, dir [, 'p']);             // เช่น ffdir(50, 270);
+// ffdir(speed, kp, [kd,] dir [, 'p']);   bbdir(speed, kp, [kd,] dir [, 'p']);   // กำหนด Kp / Kd เอง (kp ต้องมีจุดทศนิยม)
+// set_line_dir_threshold(5.0);           // ระยะยอมรับ (องศา) ค่าเริ่มต้น 5
+//
+// --- ชื่อย่อ (ใส่มุมเป็นบวกเสมอ) ---
+//   ซ้าย                ขวา                 ย่อ
+// spinlg([speed,] 90);  spinrg([speed,] 90);  slg / srg      // หมุนอยู่กับที่
+// turnlg([speed,] 90);  turnrg([speed,] 90);  tlg / trg      // เลี้ยวเดินหน้า
+// turnlbg([speed,] 90); turnrbg([speed,] 90); tlbg / trbg    // เลี้ยวถอยหลัง
+//
+// --- เลี้ยว 2 จังหวะต่อเนื่อง (ไม่หยุดกลางทาง) ---
+// tlrg([speed,] 90 [, 45]);    trlg([speed,] 90 [, 45]);     // ซ้ายแล้วขวา / ขวาแล้วซ้าย
+// tlrbg([speed,] 90 [, 45]);   trlbg([speed,] 90 [, 45]);    // แบบถอยหลัง
+
+/* ==========================================================================
+   [11] Gyro วิ่งตรง  ( [ ] = ใส่หรือไม่ใส่ก็ได้ | ใส่ dir ท้าย = ล็อกทิศสัมบูรณ์ )
+   ========================================================================== */
+//   เดินหน้า                              ถอยหลัง
+// fftimerg(speed, ms [, 'p'] [, dir]);   bbtimerg(speed, ms [, 'p'] [, dir]);   // ตามเวลา
+// fftg(speed, ms, 'p' [, dir]);          bbtg(speed, ms, 'p' [, dir]);          // ชื่อย่อ
+// ffcmg(speed, cm [, 'p'] [, dir]);      bbcmg(speed, cm [, 'p'] [, dir]);      // ตามระยะ (เร่ง/ผ่อน)
+// ffcmgs(speed, cm [, 'p'] [, dir]);     bbcmgs(speed, cm [, 'p'] [, dir]);     // ตามระยะ (ความเร็วคงที่)
+// ffbg(speed, 'p' [, dir]);              bbbg(speed, 'p' [, dir]);              // วิ่งจนเจอเส้น
+// ffdg(speed, 'p', dist);                bbdg(speed, 'p', dist);                // จนเซนเซอร์วัดระยะถึง dist
+// ffdgs(speed, 'p', dist);               bbdgs(speed, 'p', dist);               // แบบค่อย ๆ ชะลอ
+// ToCenterG();                           BackCenterG();                         // เข้ากลางด้วย gyro
+// ToFrontG();                            ToBackG();                             // วิ่งจนเจอเส้น หน้า / หลัง
+// TrackSelectG(speed, 'p');              TrackSelectGB(speed, 'p');             // สั่ง select ตรง ๆ
+// RunG(L, R);                            RunGB(L, R);                           // 1 รอบ PID ใช้ใน loop เอง
+
+/* ==========================================================================
+   [12] มอเตอร์ / แบตเตอรี่
+   ========================================================================== */
+// Motor(L, R);                 // สั่งล้อซ้าย/ขวาค้างไว้
+// Move(L, R, ms);              // สั่งล้อตามเวลา
+// MotorStop();   MotorStop(ms);
+// MotorShot();   MotorShot(ms, power);       // เบรกช็อต (power 0-100)
+// fd(speed, ms);   bk(speed, ms);            // เดินหน้า / ถอยหลัง
+// sl(speed, ms);   sr(speed, ms);            // หมุนซ้าย / ขวา
+// tl(speed, ms);   tr(speed, ms);            // เลี้ยวซ้าย / ขวา (ล้อเดียว)
+// getBatteryVoltage();                       // อ่านแรงดันแบต (V)
+
+/* ==========================================================================
+   [13] แขน / เซอร์โว
+   ========================================================================== */
+// Servo(pin, angle);                         // pin: 0, 1, 10, 28
+// Servo(a, b, c);              Servo(a, b, c, speed);
+// armupdown(angle [, speed]);                // แขนขึ้น-ลง
+// arm_left_right(l, r [, speed]);            // มือซ้าย-ขวา
+// S0_trim(x);   S1_trim(x);   S10_trim(x);   S28_trim(x);     // ชดเชยองศา
+// SerialServoControl();                      // ปรับผ่าน Serial พิมพ์ "10 90"
+//
+// --- ท่าสำเร็จรูปใน Servo.ino (ใส่ speed ได้ เช่น arm_close(2);) ---
+// arm_ready();       arm_up();          arm_up45();         arm_down();
+// arm_open();        arm_close();       arm_open_l();       arm_open_r();
+// arm_open_down();   arm_down_open();   arm_open_up();      arm_up_open();
+// arm_down_close();  arm_close_down();  arm_up_close();     arm_close_up();
+// arm_big();         arm_big_box();     arm_big_box_up();   arm_behihd();
+
+/* ==========================================================================
+   [14] เซนเซอร์ / Calibrate
+   ========================================================================== */
+// --- ตัวแปร ---
+// F[0-7]  B[0-7]  C[0-1]           // ค่าเซนเซอร์ หน้า / หลัง / กลาง (หลัง calibrate 0-1000)
+// Ref  RefC                        // threshold หน้า-หลัง / กลาง
+//
+// --- อ่านค่า ---
+// ReadCalibrateF();   ReadCalibrateB();   ReadCalibrateC();     // อ่านแบบ calibrate แล้ว
+// ReadF();            ReadB();            ReadC();              // อ่านค่าดิบ
+// ReadSensor();       ReadSensorRaw();
+//
+// --- Calibrate ---
+// calibrateA();        calibrateB();        calibrateC();
+// saveCalibA_LOCAL();  saveCalibB_LOCAL();  saveCalibC_LOCAL();
+// loadCalibration();   loadCalibration_LOCAL();   printCalibration_LOCAL();
+
+/* ==========================================================================
+   [15] Debug (Serial Monitor) — ค้าง while(1) ใช้ใน Setting() เท่านั้น
+   ========================================================================== */
+// Serial_FrontSensor();            Serial_BackSensor();             // ค่าดิบ
+// Serial_CenterSensor();           Serial_AllSensor();
+// SerialCalibrate_FrontSensor();   SerialCalibrate_BackSensor();    // ค่า calibrate
+// SerialCalibrate_CenterSensor();  SerialCalibrate_AllSensor();
+// SerialPositionF();   SerialPositionB();   SerialPositionFB();     // ตำแหน่งเส้น
+// SerialDistance();                                                 // เซนเซอร์วัดระยะ
+
+/* ==========================================================================
+   [16] เสียง / ไฟ
+   ========================================================================== */
+// Beep(ms);          Beep2(freq, ms);     beep(freq, ms);
+// BeepScanner();                          // ปี๊บสั้นแบบเครื่องสแกนบาร์โค้ด
+// BZon();            BZoff();             // เปิด / ปิด buzzer ค้าง
+// blink(n);                               // กระพริบไฟ n ครั้ง
